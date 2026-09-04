@@ -50,7 +50,7 @@ export default function Account() {
 
   useEffect(() => {
     if (!session?.token) return;
-    accountLists({ token: session.token })
+    accountLists({ token: session.token, source: 'web' })
       .then((res) => {
         if (res.data?.error) {
           if (String(res.data.error).toLowerCase().includes('sign in')) signOut();
@@ -72,8 +72,8 @@ export default function Account() {
     try {
       const res =
         mode === 'create'
-          ? await registerAccount({ email, password })
-          : await loginAccount({ email, password });
+          ? await registerAccount({ email, password, source: 'web' })
+          : await loginAccount({ email, password, source: 'web' });
       if (res.data?.error) {
         setError(res.data.error);
       } else if (res.data?.token) {
@@ -93,20 +93,18 @@ export default function Account() {
     setLoading(false);
   };
 
-  const persist = async (next) => {
-    setLists(next);
+  // Send explicit add/remove deltas instead of full lists, so saving from the
+  // website can never overwrite items the extension added elsewhere.
+  const applyDelta = async (delta, optimistic) => {
+    if (optimistic) setLists(optimistic);
     setSaving(true);
     try {
-      const res = await accountLists({
-        token: session.token,
-        whitelist: next.whitelist,
-        blacklist: next.blacklist
-      });
+      const res = await accountLists({ token: session.token, source: 'web', ...delta });
       if (res.data && !res.data.error) {
         setLists({ whitelist: res.data.whitelist || [], blacklist: res.data.blacklist || [] });
       }
     } catch {
-      // keep the optimistic update — the extension re-syncs on next change
+      // keep the optimistic update — the server stays authoritative for sync
     }
     setSaving(false);
   };
@@ -114,11 +112,11 @@ export default function Account() {
   const addToList = (kind, value) => {
     const origin = normalizeOrigin(value);
     if (!origin || lists[kind].includes(origin)) return;
-    persist({ ...lists, [kind]: [...lists[kind], origin] });
+    applyDelta({ add: { [kind]: [origin] } }, { ...lists, [kind]: [...lists[kind], origin] });
   };
 
   const removeFromList = (kind, origin) => {
-    persist({ ...lists, [kind]: lists[kind].filter((o) => o !== origin) });
+    applyDelta({ remove: { [kind]: [origin] } }, { ...lists, [kind]: lists[kind].filter((o) => o !== origin) });
   };
 
   return (

@@ -16,6 +16,16 @@ export default async function(req) {
     const hash = await hashPassword(password, account.password_salt);
     if (hash !== account.password_hash) return Response.json({ error: 'Wrong password' }, { status: 401 });
 
+    // When the extension signs in, it merges the returned lists into its
+    // local storage — so remember them as the extension's known view. The
+    // website marks its own sign-ins with source: "web" and is skipped.
+    if (body.source !== 'web') {
+      await base44.asServiceRole.entities.ExtensionAccount.update(account.id, {
+        last_synced_whitelist: account.whitelist || [],
+        last_synced_blacklist: account.blacklist || []
+      });
+    }
+
     return Response.json({
       token: account.token,
       email: account.email,

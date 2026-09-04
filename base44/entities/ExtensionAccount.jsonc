@@ -25,6 +25,18 @@
       "items": {
         "type": "string"
       }
+    },
+    "last_synced_whitelist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_synced_blacklist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     }
   },
   "required": [
