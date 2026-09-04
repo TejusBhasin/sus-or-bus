@@ -10,7 +10,7 @@ import { useLanguage } from '@/lib/i18n';
 const sections = [
   {
     h: '1. Information We Collect',
-    p: 'When you use Sus or Bus, we collect the content you submit for analysis (links, HTML, code, email text, or plain text), your account information if you are logged in, and basic technical data such as browser type. Reports are stored so you can revisit and share them.'
+    p: 'When you use Sus or Bus, we collect the content you submit for analysis (links, HTML, code, email text, or plain text) and basic technical data such as browser type. Reports are stored so you can revisit and share them.'
   },
   {
     h: '2. How We Use Your Information',
@@ -22,7 +22,7 @@ const sections = [
   },
   {
     h: '4. Data Retention',
-    p: 'Reports are retained as part of your account history. You may delete your reports at any time. We retain data only as long as necessary to provide the Service or as required by law.'
+    p: 'Reports are retained anonymously, without any account. We retain data only as long as necessary to provide the Service or as required by law.'
   },
   {
     h: '5. Cookies and Local Storage',
@@ -34,7 +34,7 @@ const sections = [
   },
   {
     h: '7. Your Rights',
-    p: 'You may access, correct, or delete your report history. For other data requests, contact us at support@susorbus.com.'
+    p: 'Sus or Bus requires no account or sign-up. For data requests about your submitted reports, contact us at support@susorbus.com.'
   },
   {
     h: '8. Security',

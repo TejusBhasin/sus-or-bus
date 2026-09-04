@@ -11,10 +11,6 @@ import ScrollToTop from './components/ScrollToTop';
 // Add page imports here (lazy-loaded so the app opens fast)
 const Home = lazy(() => import('./pages/Home'));
 const Report = lazy(() => import('@/pages/Report'));
-const Login = lazy(() => import('@/pages/Login'));
-const Register = lazy(() => import('@/pages/Register'));
-const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const Terms = lazy(() => import('@/pages/Terms'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
 const Settings = lazy(() => import('@/pages/Settings'));
@@ -69,10 +65,6 @@ const AnimatedRoutes = () => {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<Home />} />
             <Route path="/report/:id" element={<Report />} />
             <Route path="*" element={<PageNotFound />} />
