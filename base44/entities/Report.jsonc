@@ -1,0 +1,116 @@
+{
+  "name": "Report",
+  "type": "object",
+  "properties": {
+    "input_type": {
+      "type": "string",
+      "enum": [
+        "url",
+        "html",
+        "code",
+        "email",
+        "text"
+      ]
+    },
+    "input_content": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "sus",
+        "bus"
+      ]
+    },
+    "score": {
+      "type": "number"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "points": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "good",
+              "warning",
+              "bad"
+            ]
+          },
+          "category": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "details": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "dataCollected": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "trackers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "technologies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "redFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "greenFlags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "codeNotes": {
+          "type": "string"
+        }
+      }
+    },
+    "preview_title": {
+      "type": "string"
+    },
+    "preview_description": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "input_type",
+    "verdict",
+    "score",
+    "summary"
+  ]
+}
