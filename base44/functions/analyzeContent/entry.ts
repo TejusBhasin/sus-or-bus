@@ -1,13 +1,23 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { runAnalysis, type Finding } from '../../shared/analysisSignals.ts';
+import { hashString, makeRng, pick, fillTemplate, TITLE_BANKS, DESC_BANKS, SUMMARY_KEYS, VARIANTS_PER_KEY, expandSummaryVariant } from '../../shared/wordBank.ts';
 
 const FETCH_TIMEOUT_MS = 15000;
 const MAX_HTML = 50000;
-const MAX_ANALYSIS = 40000;
+const GENERIC_TITLE = 'Attention needed';
 
-function extractMeta(html, attr, key) {
+function extractMeta(html: string, attr: string, key: string): string {
   const re = new RegExp(`<meta[^>]*${attr}=["']${key}["'][^>]*content=["']([^"']*)["']`, 'i');
   const m = html.match(re);
   return m ? m[1].trim() : '';
+}
+
+function hostOf(u: string): string {
+  try {
+    return new URL(u).host.toLowerCase();
+  } catch {
+    return '';
+  }
 }
 
 export default async function(req) {
@@ -44,7 +54,7 @@ export default async function(req) {
       } catch {}
       url = u;
       // Shared cache: if anyone scanned this exact site in the last 7 days,
-      // reuse that report instead of spending a new LLM call.
+      // reuse that report — zero analysis work, zero credits.
       const recent = await base44.asServiceRole.entities.Report.filter(
         { input_type: 'url', url: u },
         '-created_date',
@@ -89,122 +99,113 @@ export default async function(req) {
       }
     }
 
-    let documentNote = '';
+    // Documents: fetch the file and pull out readable text ourselves.
+    let docText = '';
     if (inputType === 'document') {
-      documentNote = `The user uploaded a document named "${fileName || 'document'}". Read the attached document file carefully and base your analysis on its actual contents.`;
-      analysisContent = 'The document is provided as an attached file.';
       preview.title = fileName || 'Uploaded document';
+      try {
+        const resp = await fetch(fileUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+        docText = await resp.text();
+      } catch (e) {
+        preview.fetchError = e.message;
+      }
     }
 
-    const prompt = `You are "Sus or Bus", a sharp web-safety analyzer. Slang: "Bus" (short for "bussin") means really good / safe / legit. "Sus" means suspicious / sketchy / unsafe.
+    /* ---------- Deterministic analysis (zero AI, zero credits) ---------- */
 
-Analyze the following ${inputType === 'document' ? 'DOCUMENT (see the attached file)' : inputType.toUpperCase()} input for safety, privacy, security, and trustworthiness.
+    const analysis = runAnalysis(
+      inputType,
+      inputType === 'url' || inputType === 'document' ? '' : content,
+      inputType === 'url' ? analysisContent : '',
+      fileName,
+      docText
+    );
 
-${documentNote}
+    // Wording: every phrase is picked from variant banks with a seeded RNG
+    // (seed rotates daily so re-scans read fresh) and filled with the concrete
+    // facts the engine found.
+    const daySalt = Math.floor(Date.now() / 86400000);
+    const normInput = (inputType === 'url' ? url : content).toLowerCase();
+    const rng = makeRng(hashString(normInput + '|' + daySalt));
 
------ INPUT START -----
-${analysisContent.slice(0, MAX_ANALYSIS)}
------ INPUT END -----
-
-Produce a rigorous but fair assessment. Look for: data collection & privacy practices, third-party trackers, suspicious scripts, phishing/social-engineering signals, misleading content, code safety, reputation signals, and (for emails) spoofing/urgency/red flags. For documents, also inspect: suspicious links, requests for sensitive information or payments, scam patterns, malicious instructions, and the legitimacy of the sender's claims.
-
-Return a JSON object with EXACTLY this shape:
-{
-  "verdict": "bus" or "sus",
-  "score": number 0-100 (100 = very safe),
-  "summary": "one punchy sentence: a TECHNICAL explanation for security-savvy users (may use terms like XSS, CSP, obfuscation, etc.)",
-  "simple_summary": "one sentence in plain everyday language anyone can understand (no jargon, explain like you're talking to your grandma)",
-  "points": [
-    { "title": "short label", "severity": "good" | "warning" | "bad", "category": "privacy" | "security" | "trackers" | "content" | "code" | "email" | "reputation", "description": "1-2 sentence TECHNICAL explanation", "simple_description": "1-2 sentence plain-language explanation anyone can understand (no jargon)" }
-  ],
-  "details": {
-    "title": "page/site/document title if known, else empty string",
-    "description": "site/page/document description if known, else empty string",
-    "dataCollected": ["data types collected, if any"],
-    "trackers": ["tracking/analytics services found, if any"],
-    "technologies": ["technologies/frameworks detected, if any"],
-    "redFlags": ["specific concerns"],
-    "greenFlags": ["specific positives"],
-    "codeNotes": "TECHNICAL notes about any code/html analyzed, or empty string",
-    "simple_code_notes": "plain-language version of the code notes (what it means in everyday terms), or empty string"
-  }
-}
-
-Rules:
-- Give 5 to 8 points covering different angles.
-- Score guide: 75-100 = clearly bus, 60-74 = leans bus, 45-59 = leans sus, below 45 = clearly sus. Set "verdict" to match the lean.
-- Be concrete: cite what you actually saw in the input. Never invent facts not supported by the input.
-- The "simple_*" fields must convey the SAME meaning as their technical counterparts but in plain language a non-technical person understands. Never contradict the technical version.`;
-
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt,
-      ...(inputType === 'document' ? { file_urls: [fileUrl] } : {}),
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          verdict: { type: 'string', enum: ['bus', 'sus'] },
-          score: { type: 'number' },
-          summary: { type: 'string' },
-          simple_summary: { type: 'string' },
-          points: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                title: { type: 'string' },
-                severity: { type: 'string' },
-                category: { type: 'string' },
-                description: { type: 'string' },
-                simple_description: { type: 'string' }
-              }
-            }
-          },
-          details: {
-            type: 'object',
-            properties: {
-              title: { type: 'string' },
-              description: { type: 'string' },
-              dataCollected: { type: 'array', items: { type: 'string' } },
-              trackers: { type: 'array', items: { type: 'string' } },
-              technologies: { type: 'array', items: { type: 'string' } },
-              redFlags: { type: 'array', items: { type: 'string' } },
-              greenFlags: { type: 'array', items: { type: 'string' } },
-              codeNotes: { type: 'string' },
-              simple_code_notes: { type: 'string' }
-            }
-          }
-        }
-      }
+    const points = analysis.findings.map((f: Finding) => {
+      const titles = TITLE_BANKS[f.id] || [f.id.replace(/_/g, ' ')];
+      const descs = DESC_BANKS[f.id] || {
+        tech: ['Flagged by the deterministic safety engine.'],
+        simple: ['Something about this was flagged as a caution point.']
+      };
+      return {
+        title: fillTemplate(pick(rng, titles), f.values),
+        severity: f.severity,
+        category: f.category,
+        description: fillTemplate(pick(rng, descs.tech), f.values),
+        simple_description: fillTemplate(pick(rng, descs.simple), f.values)
+      };
     });
+
+    // Summaries: 500 variants per tone live in the WordingBank database.
+    // Pick one by a stable index; fall back to the in-code bank if needed.
+    const topBad = points.find((p) => p.severity === 'bad');
+    const redCount = points.filter((p) => p.severity === 'bad').length;
+    const siteLabel = hostOf(url) || (inputType === 'document' ? fileName : 'this input');
+    const summaryValues = {
+      host: siteLabel,
+      top: (topBad ? topBad.title : 'no notable findings').toLowerCase(),
+      n: redCount,
+      score: analysis.score
+    };
+
+    async function pickSummary(key: string): Promise<string> {
+      const idx = hashString(key + '|' + normInput + '|' + daySalt) % VARIANTS_PER_KEY;
+      try {
+        const rows = await base44.asServiceRole.entities.WordingBank.filter({ key, idx }, '-created_date', 1);
+        if (rows && rows[0] && rows[0].text) return fillTemplate(rows[0].text, summaryValues);
+      } catch {}
+      return fillTemplate(expandSummaryVariant(key, idx), summaryValues);
+    }
+
+    const techKey = analysis.verdict === 'bus' ? 'bus_tech' : 'sus_tech';
+    const simpleKey = analysis.verdict === 'bus' ? 'bus_simple' : 'sus_simple';
+    const summary = await pickSummary(techKey);
+    const simpleSummary = await pickSummary(simpleKey);
 
     if (!sourceCode && (inputType === 'html' || inputType === 'code')) {
       sourceCode = content.slice(0, 20000);
     }
 
+    const details = {
+      title: preview.title || siteLabel,
+      description: preview.description,
+      dataCollected: analysis.dataCollected,
+      trackers: analysis.trackers,
+      technologies: analysis.technologies,
+      redFlags: analysis.redFlags,
+      greenFlags: analysis.greenFlags,
+      codeNotes: analysis.codeNotes,
+      simple_code_notes: analysis.simpleCodeNotes
+    };
+
     const report = await base44.asServiceRole.entities.Report.create({
       input_type: inputType,
       input_content: inputType === 'document' ? `Document: ${fileName || 'uploaded file'}` : content.slice(0, 5000),
       url: inputType === 'document' ? fileUrl : url,
-      verdict: result.verdict,
-      score: result.score,
-      summary: result.summary,
-      simple_summary: result.simple_summary || result.summary,
-      points: result.points || [],
-      details: {
-        ...(result.details || {}),
-        simple_code_notes: (result.details && result.details.simple_code_notes) || (result.details && result.details.codeNotes) || ''
-      },
-      preview_title: preview.title || (result.details && result.details.title) || '',
-      preview_description: preview.description || (result.details && result.details.description) || '',
+      verdict: analysis.verdict,
+      score: analysis.score,
+      summary,
+      simple_summary: simpleSummary,
+      points,
+      details,
+      preview_title: preview.title,
+      preview_description: preview.description,
       source_code: sourceCode
     });
 
     return Response.json({
-      verdict: result.verdict,
-      score: result.score,
-      summary: result.summary,
-      points: result.points || [],
-      details: result.details || {},
+      verdict: analysis.verdict,
+      score: analysis.score,
+      summary,
+      points,
+      details,
       preview,
       sourceCode,
       reportId: report.id
