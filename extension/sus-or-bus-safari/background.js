@@ -23,6 +23,31 @@ function originOf(url) {
   }
 }
 
+// Google Search pages are never checked.
+function isGoogleSearch(url) {
+  try {
+    const u = new URL(url);
+    return u.host === 'www.google.com' && u.pathname.startsWith('/search');
+  } catch {
+    return false;
+  }
+}
+
+// The user's "Don't ask again" list, persisted in local storage.
+async function isWhitelisted(origin) {
+  const store = await chrome.storage.local.get('sb_whitelist');
+  return (store.sb_whitelist || []).includes(origin);
+}
+
+async function addWhitelist(origin) {
+  const store = await chrome.storage.local.get('sb_whitelist');
+  const list = store.sb_whitelist || [];
+  if (!list.includes(origin)) {
+    list.push(origin);
+    await chrome.storage.local.set({ sb_whitelist: list });
+  }
+}
+
 async function readCache() {
   const store = await chrome.storage.local.get('sb_cache');
   return store.sb_cache || {};
@@ -91,6 +116,8 @@ function consumeAllow(origin) {
 async function handleCheck(url, sender) {
   const origin = originOf(url);
   if (!origin) return { status: 'pass' }; // not a checkable website — let it through
+  if (isGoogleSearch(url)) return { status: 'pass' }; // Google Search pages are never checked
+  if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
 
   const cache = await readCache();
   const hit = cache[origin];
@@ -121,8 +148,10 @@ async function handleGate(msg, sender) {
   if (msg.navType === 'reload' || msg.navType === 'back_forward' || msg.navType === 'prerender') {
     return { status: 'pass' };
   }
+  if (isGoogleSearch(msg.url)) return { status: 'pass' }; // Google Search pages are never checked
   if (msg.refOrigin && msg.refOrigin === origin) return { status: 'pass' }; // same-site chain
   if (consumeAllow(origin)) return { status: 'pass' }; // already approved this hop
+  if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
 
   const cache = await readCache();
   const hit = cache[origin];
@@ -167,6 +196,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .then(sendResponse)
       .catch(() => sendResponse({ status: 'pass' }));
     return true;
+  }
+  if (msg.type === 'sb:whitelist') {
+    const origin = originOf(msg.url);
+    if (origin) {
+      addWhitelist(origin).catch(() => {}); // remember the site across sessions
+      allowOrigin(origin); // and let this navigation through
+    }
+    sendResponse({ status: 'ok' });
+    return;
   }
   if (msg.type === 'sb:allow') {
     const origin = originOf(msg.url);

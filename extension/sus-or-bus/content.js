@@ -121,6 +121,29 @@
     }
   }
 
+  // Google Search pages are never checked — the extension stays fully out of the way there.
+  function isGoogleSearch(url) {
+    try {
+      const u = new URL(url);
+      return u.host === 'www.google.com' && u.pathname.startsWith('/search');
+    } catch {
+      return false;
+    }
+  }
+
+  // Sites the user marked "Don't ask again" — kept in sync with storage so
+  // clicks on them pass straight through with no popup.
+  let whitelist = new Set();
+  chrome.storage.local
+    .get('sb_whitelist')
+    .then((s) => { whitelist = new Set(s.sb_whitelist || []); })
+    .catch(() => {});
+  if (chrome.storage.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === 'local' && changes.sb_whitelist) whitelist = new Set(changes.sb_whitelist.newValue || []);
+    });
+  }
+
   function ensurePopup() {
     if (host) return;
     host = document.createElement('div');
@@ -139,6 +162,8 @@
         window.open(REPORT_BASE + pendingReportId, '_blank', 'noopener');
       } else if (act === 'alt' && pendingUrl) {
         requestAlternatives(pendingUrl);
+      } else if (act === 'whitelist' && pendingUrl) {
+        whitelistSite(pendingUrl);
       } else if (act === 'openalt') {
         const alt = t.getAttribute('data-url');
         if (alt) {
@@ -197,6 +222,7 @@
       ${points ? `<div class="sb-points">${points}</div>` : ''}
       ${verdict === 'sus' ? '<a class="sb-link sb-report" data-act="alt">Find alternative websites →</a>' : ''}
       ${pendingReportId ? `<a class="sb-link sb-report" data-act="report">Full report →</a>` : ''}
+      <div class="sb-anyway"><a class="sb-link" data-act="whitelist">Don\u2019t ask again for this site</a></div>
     `;
   }
 
@@ -220,6 +246,7 @@
         if (url !== pendingUrl) return;
         if (res && res.status === 'hit') renderResult(url, res.data);
         else if (res && res.status === 'error') renderError(url, res.message);
+        else if (res && res.status === 'pass') proceed(); // whitelisted — go without asking
         // 'scanning' -> waiting for sb:update
       })
       .catch(() => {
@@ -363,6 +390,14 @@
     else location.href = url;
   }
 
+  // "Don't ask again for this site" — remember the site in the background,
+  // then continue to it (or lift the full-screen cover if we're already on it).
+  function whitelistSite(url) {
+    chrome.runtime.sendMessage({ type: 'sb:whitelist', url }).catch(() => {});
+    if (takeover) closePopup();
+    else proceed();
+  }
+
   function closePopup() {
     if (host) host.remove();
     host = null;
@@ -399,6 +434,8 @@
       }
       if (!/^https?:$/.test(url.protocol)) return;
       if (url.origin === HERE) return; // same-site links pass through
+      if (isGoogleSearch(url.href)) return; // Google Search pages are never checked
+      if (whitelist.has(url.origin)) return; // user whitelisted this site — pass through
       e.preventDefault();
       e.stopPropagation();
       const mode = a.target === '_blank' ? 'blank' : 'same';
@@ -427,6 +464,8 @@
       if (nav && nav.type) navType = nav.type;
     } catch {}
     if (navType === 'reload' || navType === 'back_forward' || navType === 'prerender') return;
+    if (isGoogleSearch(location.href)) return; // Google Search pages are never checked
+    if (whitelist.has(location.origin)) return; // user whitelisted this site — no takeover
     let refOrigin = '';
     try {
       if (document.referrer) refOrigin = new URL(document.referrer).origin;
