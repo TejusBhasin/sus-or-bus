@@ -57,7 +57,7 @@ export default function Extension() {
         <div className="mt-8 rounded-2xl border border-border bg-card/60 backdrop-blur p-6 text-center">
           <Chrome className="w-8 h-8 mx-auto text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-            Check any website\u2019s SUS or BUS rating before you open it — right in your browser.
+            Check any website's SUS or BUS rating before you open it — right in your browser.
           </p>
           <a
             href="/extension/sus-or-bus.zip"
@@ -77,9 +77,9 @@ export default function Extension() {
             what it is
           </div>
           <p className="text-muted-foreground leading-relaxed text-[15px]">
-            Sus or Bus for Chrome is a browser extension that checks the websites you\u2019re about to
+            Sus or Bus for Chrome is a browser extension that checks the websites you're about to
             open — before you open them. Click a link to another site and the extension pauses for a
-            moment, shows that site\u2019s SUS or BUS rating in the corner, and lets you decide:
+            moment, shows that site's SUS or BUS rating in the corner, and lets you decide:
             continue or cancel. It uses the same safety engine as this app, so the rating you see in
             the popup is the same analysis you get here — with the full report one tap away.
           </p>
