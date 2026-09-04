@@ -4,8 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { analyzeContent } from '@/functions/analyzeContent';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles, History } from 'lucide-react';
-import RecentReports from '@/components/susbus/RecentReports';
+import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles } from 'lucide-react';
 
 const inputTypes = [
   { id: 'url', label: 'URL', icon: Globe, placeholder: 'https://example.com' },
@@ -30,13 +29,6 @@ export default function Home() {
   const [inputType, setInputType] = useState('url');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [recent, setRecent] = useState([]);
-
-  useEffect(() => {
-    base44.entities.Report.list('-created_date', 6)
-      .then(setRecent)
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (content.trim().length > 6) {
@@ -139,15 +131,6 @@ export default function Home() {
           <p className="mt-2 text-center text-[11px] text-slate-600 font-mono">⌘/Ctrl + Enter</p>
         </div>
 
-        {recent.length > 0 && (
-          <div className="mt-12">
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-slate-500 mb-3">
-              <History className="w-3.5 h-3.5" />
-              recent checks
-            </div>
-            <RecentReports reports={recent} />
-          </div>
-        )}
       </div>
     </div>
   );
