@@ -1,6 +1,7 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
 
-export default function ScoreGauge({ score = 0, verdict }) {
+export default function ScoreGauge({ score = 0, verdict, label }) {
   const radius = 72;
   const circ = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, score));
@@ -19,7 +20,9 @@ export default function ScoreGauge({ score = 0, verdict }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-5xl font-black tabular-nums" style={{ color }}>{Math.round(clamped)}</span>
-        <span className="mt-1 text-[10px] uppercase tracking-[0.2em] text-slate-500 font-mono">safety</span>
+        {label && (
+          <span className="mt-0.5 text-xs font-semibold uppercase tracking-wider" style={{ color }}>{label}</span>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,9 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Navigate } from 'react-router-dom';
+import Terms from '@/pages/Terms';
+import Privacy from '@/pages/Privacy';
+import { LanguageProvider } from '@/lib/i18n';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -43,6 +46,8 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Add your page Route elements here */}
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -60,6 +65,7 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
+    <LanguageProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
@@ -69,6 +75,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
+    </LanguageProvider>
   )
 }
 

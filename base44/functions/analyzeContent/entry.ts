@@ -26,6 +26,7 @@ export default async function(req) {
 
     let analysisContent = content;
     let url = '';
+    let sourceCode = '';
     const preview = { title: '', description: '', status: null, finalUrl: '', fetchError: '' };
 
     if (inputType === 'url') {
@@ -40,6 +41,7 @@ export default async function(req) {
         });
         const html = await resp.text();
         analysisContent = html.slice(0, MAX_HTML);
+        sourceCode = html.slice(0, 20000);
         const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
         preview.title = titleMatch ? titleMatch[1].trim() : '';
         preview.description = extractMeta(html, 'name', 'description') || extractMeta(html, 'property', 'og:description');
@@ -122,6 +124,10 @@ Rules:
       }
     });
 
+    if (!sourceCode && (inputType === 'html' || inputType === 'code')) {
+      sourceCode = content.slice(0, 20000);
+    }
+
     const report = await base44.entities.Report.create({
       input_type: inputType,
       input_content: content.slice(0, 5000),
@@ -133,7 +139,7 @@ Rules:
       details: result.details || {},
       preview_title: preview.title || (result.details && result.details.title) || '',
       preview_description: preview.description || (result.details && result.details.description) || '',
-      raw_html: inputType === 'url' ? analysisContent.slice(0, 20000) : ''
+      source_code: sourceCode
     });
 
     return Response.json({
@@ -143,6 +149,7 @@ Rules:
       points: result.points || [],
       details: result.details || {},
       preview,
+      sourceCode,
       reportId: report.id
     });
   } catch (error) {

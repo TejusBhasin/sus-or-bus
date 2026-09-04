@@ -1,7 +1,9 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 
 export default function VerdictDisplay({ verdict }) {
+  const { t } = useLanguage();
   const isBus = verdict === 'bus';
   return (
     <div className="flex flex-col items-center text-center select-none">
@@ -15,7 +17,7 @@ export default function VerdictDisplay({ verdict }) {
         {isBus ? 'BUS' : 'SUS'}
       </div>
       <p className="mt-3 text-sm text-slate-400 font-mono">
-        {isBus ? 'this is bussin — looks legit' : 'this is sus — proceed with caution'}
+        {isBus ? t('v_bus') : t('v_sus')}
       </p>
     </div>
   );
