@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import {
-  Loader2, ArrowLeft, ExternalLink, Globe, Code2, FileText, Mail, Eye, ShieldAlert,
+  ArrowLeft, ExternalLink, Globe, Code2, FileText, Mail, Eye, ShieldAlert,
   BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain, Settings
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
@@ -19,6 +19,8 @@ import NerdModeToggle from '@/components/susbus/NerdModeToggle';
 import TopNav from '@/components/susbus/TopNav';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
+import ReportSkeleton from '@/components/susbus/ReportSkeleton';
+import { getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
 
 const typeIcon = { url: Globe, html: Code2, code: Code2, email: Mail, text: FileText };
 const typeLabelKey = { url: 'tab_url', html: 'tab_html', code: 'tab_code', email: 'tab_email', text: 'tab_text' };
@@ -45,7 +47,9 @@ function DetailList({ icon: Icon, title, items }) {
 
 export default function Report() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { t } = useLanguage();
+  const isPending = id === 'pending';
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -58,11 +62,44 @@ export default function Report() {
   }, [nerdMode]);
 
   useEffect(() => {
+    if (isPending) return;
     base44.entities.Report.get(id)
       .then((r) => setReport(r))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, isPending]);
+
+  // Optimistic flow: the analysis promise is already running — show the skeleton until it lands
+  useEffect(() => {
+    if (!isPending) return;
+    const pending = getPendingReport();
+    if (!pending) {
+      navigate('/', { replace: true });
+      return;
+    }
+    let cancelled = false;
+    pending
+      .then((res) => {
+        if (cancelled) return;
+        clearPendingReport();
+        const reportId = res.data?.reportId;
+        if (!reportId) {
+          setAnalyzeError('Something went wrong');
+          navigate('/', { replace: true });
+          return;
+        }
+        navigate(`/report/${reportId}`, { replace: true });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        clearPendingReport();
+        setAnalyzeError(err.message || 'Something went wrong');
+        navigate('/', { replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isPending, navigate]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -110,12 +147,8 @@ export default function Report() {
     doc.save('susorbus-report.pdf');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (loading || isPending) {
+    return <ReportSkeleton />;
   }
 
   if (notFound || !report) {
@@ -296,13 +329,16 @@ export default function Report() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-5 p-1 bg-card/60 rounded-lg border border-border w-fit">
+        <div className="flex gap-1 mb-5 p-1 bg-card/60 rounded-lg border border-border w-fit" role="tablist">
           {[
             { id: 'quick', label: t('score_tab') },
             { id: 'detailed', label: t('detailed_tab') }
           ].map((tb) => (
             <button
               key={tb.id}
+              role="tab"
+              aria-selected={tab === tb.id}
+              tabindex={tab === tb.id ? 0 : -1}
               onClick={() => setTab(tb.id)}
               className={`inline-flex min-h-11 items-center px-4 rounded-md text-sm font-medium transition-colors ${
                 tab === tb.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
@@ -388,7 +424,7 @@ export default function Report() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-popover text-popover-foreground px-4 py-2 text-sm shadow-xl flex items-center gap-2">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-popover text-popover-foreground px-4 py-2 text-sm shadow-xl flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-500" />
           {toast}
         </div>

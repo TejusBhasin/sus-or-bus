@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
+import TabBar from './components/susbus/TabBar';
 // Add page imports here (lazy-loaded so the app opens fast)
 const Home = lazy(() => import('./pages/Home'));
 const Report = lazy(() => import('@/pages/Report'));
@@ -41,7 +42,12 @@ const AuthenticatedApp = () => {
   }
 
   // Render the main app
-  return <AnimatedRoutes />;
+  return (
+    <>
+      <AnimatedRoutes />
+      <TabBar />
+    </>
+  );
 };
 
 const AnimatedRoutes = () => {

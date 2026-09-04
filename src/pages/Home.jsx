@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { analyzeContent } from '@/functions/analyzeContent';
+import { setPendingReport, getAnalyzeError, clearAnalyzeError } from '@/lib/pendingReport';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles, Settings } from 'lucide-react';
@@ -42,18 +43,25 @@ export default function Home() {
     }
   }, [content]); // eslint-disable-line
 
-  const handleAnalyze = async () => {
-    if (!content.trim()) return;
+  useEffect(() => {
+    const err = getAnalyzeError();
+    if (err) {
+      setError(err);
+      clearAnalyzeError();
+    }
+  }, []);
+
+  const handleAnalyze = () => {
+    if (!content.trim() || loading) return;
     setLoading(true);
     setError('');
-    try {
-      const res = await analyzeContent({ inputType, content });
+    const promise = analyzeContent({ inputType, content }).then((res) => {
       if (res.data?.error) throw new Error(res.data.error);
-      navigate(`/report/${res.data.reportId}`);
-    } catch (e) {
-      setError(e.message || 'Something went wrong');
-      setLoading(false);
-    }
+      return res;
+    });
+    promise.catch(() => {}); // rejection is surfaced on the report route
+    setPendingReport(promise);
+    navigate('/report/pending');
   };
 
   const activeType = inputTypes.find((type) => type.id === inputType);
