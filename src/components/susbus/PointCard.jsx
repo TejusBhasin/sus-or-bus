@@ -37,7 +37,7 @@ export default function PointCard({ point, mode = 'nerd' }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
           <h4 className="font-semibold text-foreground text-sm">{point.title}</h4>
-          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
+          <span className="inline-flex items-center gap-1 text-xs uppercase tracking-wider font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
             <CatIcon className="w-3 h-3" />
             {point.category}
           </span>
@@ -46,7 +46,7 @@ export default function PointCard({ point, mode = 'nerd' }) {
         {showSimple && simple && (
           <div className={cn('mt-1 text-sm leading-relaxed', showTech ? 'text-foreground' : 'text-muted-foreground')}>
             {showTech && (
-              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400/70 align-middle">
+              <span className="inline-flex items-center gap-1 mr-2 text-xs uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400/70 align-middle">
                 <User className="w-3 h-3 inline" />simple
               </span>
             )}
@@ -57,7 +57,7 @@ export default function PointCard({ point, mode = 'nerd' }) {
         {showTech && tech && tech !== simple && (
           <div className={cn('mt-1 text-sm leading-relaxed', showSimple ? 'text-muted-foreground' : 'text-muted-foreground')}>
             {showSimple && (
-              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-600 dark:text-indigo-400/70 align-middle">
+              <span className="inline-flex items-center gap-1 mr-2 text-xs uppercase tracking-wider font-mono text-indigo-600 dark:text-indigo-400/70 align-middle">
                 <Brain className="w-3 h-3 inline" />nerd
               </span>
             )}

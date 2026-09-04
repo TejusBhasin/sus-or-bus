@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
+import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
 import { useLanguage } from '@/lib/i18n';
 
@@ -49,7 +50,8 @@ export default function Privacy() {
   const { t } = useLanguage();
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-2xl mx-auto px-5 py-12">
+      <TopNav />
+      <div className="max-w-2xl mx-auto px-5 py-12 pb-safe">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-10">
           <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />

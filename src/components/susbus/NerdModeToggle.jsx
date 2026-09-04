@@ -19,7 +19,7 @@ export default function NerdModeToggle({ mode, onChange }) {
             key={m.id}
             onClick={() => onChange(m.id)}
             className={cn(
-              'inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+              'inline-flex items-center gap-1 rounded-md min-h-11 px-2.5 text-xs font-medium transition-colors',
               active
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:text-foreground'

@@ -16,6 +16,7 @@ import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import NerdModeToggle from '@/components/susbus/NerdModeToggle';
+import TopNav from '@/components/susbus/TopNav';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
 
@@ -141,11 +142,15 @@ export default function Report() {
   const created = report.created_date ? format(new Date(report.created_date), 'MMM d, yyyy • HH:mm') : '';
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col">
-      <div
-        className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[600px] rounded-full blur-[130px]"
-        style={{ background: isBus ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.09)' }}
-      />
+    <div className="min-h-screen bg-background text-foreground relative flex flex-col">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[600px] rounded-full blur-[130px]"
+          style={{ background: isBus ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.09)' }}
+        />
+      </div>
+
+      <TopNav />
 
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
@@ -169,7 +174,7 @@ export default function Report() {
               {(nerdMode === 'simple' || nerdMode === 'both') && report.simple_summary && (
                 <div className="mt-4 leading-relaxed">
                   {nerdMode === 'both' && (
-                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400/70">
+                    <span className="inline-flex items-center gap-1 mr-2 text-xs uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400/70">
                       <User className="w-3 h-3 inline" />simple
                     </span>
                   )}
@@ -179,7 +184,7 @@ export default function Report() {
               {(nerdMode === 'nerd' || nerdMode === 'both') && (
                 <div className={nerdMode === 'both' ? 'mt-2 leading-relaxed' : 'mt-4 leading-relaxed'}>
                   {nerdMode === 'both' && (
-                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-600 dark:text-indigo-400/70">
+                    <span className="inline-flex items-center gap-1 mr-2 text-xs uppercase tracking-wider font-mono text-indigo-600 dark:text-indigo-400/70">
                       <Brain className="w-3 h-3 inline" />nerd
                     </span>
                   )}
@@ -187,12 +192,12 @@ export default function Report() {
                 </div>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono text-muted-foreground border border-border rounded px-2 py-1">
+                <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-mono text-muted-foreground border border-border rounded px-2 py-1">
                   <Icon className="w-3 h-3" />
                   {t(typeLabelKey[report.input_type] || 'tab_text')}
                 </span>
                 {created && (
-                  <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-mono text-muted-foreground">
                     <Clock className="w-3 h-3" />
                     {created}
                   </span>
@@ -225,21 +230,21 @@ export default function Report() {
               <CheckCircle2 className="w-4 h-4" />
               <span className="text-2xl font-bold">{counts.good}</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">good</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-mono">good</span>
           </div>
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
             <div className="flex items-center justify-center gap-1 text-amber-500 dark:text-amber-400">
               <AlertTriangle className="w-4 h-4" />
               <span className="text-2xl font-bold">{counts.warning}</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">warning</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-mono">warning</span>
           </div>
           <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
             <div className="flex items-center justify-center gap-1 text-red-500 dark:text-red-400">
               <XCircle className="w-4 h-4" />
               <span className="text-2xl font-bold">{counts.bad}</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">bad</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-mono">bad</span>
           </div>
         </div>
 
@@ -292,7 +297,7 @@ export default function Report() {
             <button
               key={tb.id}
               onClick={() => setTab(tb.id)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-11 items-center px-4 rounded-md text-sm font-medium transition-colors ${
                 tab === tb.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -331,13 +336,13 @@ export default function Report() {
                   </div>
                   {(nerdMode === 'simple' || nerdMode === 'both') && d.simple_code_notes && (
                     <p className={cn('text-sm text-muted-foreground leading-relaxed', nerdMode === 'both' && 'mb-2')}>
-                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-emerald-600 dark:text-emerald-400/70 mr-2">simple</span>}
+                      {nerdMode === 'both' && <span className="text-xs uppercase font-mono text-emerald-600 dark:text-emerald-400/70 mr-2">simple</span>}
                       {d.simple_code_notes}
                     </p>
                   )}
                   {(nerdMode === 'nerd' || nerdMode === 'both') && (
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-indigo-600 dark:text-indigo-400/70 mr-2">nerd</span>}
+                      {nerdMode === 'both' && <span className="text-xs uppercase font-mono text-indigo-600 dark:text-indigo-400/70 mr-2">nerd</span>}
                       {d.codeNotes}
                     </p>
                   )}
@@ -370,7 +375,7 @@ export default function Report() {
         )}
       </div>
 
-      <div className="relative max-w-2xl mx-auto px-5 w-full">
+      <div className="relative max-w-2xl mx-auto px-5 w-full pb-safe">
         <Footer />
       </div>
 

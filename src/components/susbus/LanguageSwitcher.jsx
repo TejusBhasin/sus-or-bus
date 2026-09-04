@@ -20,7 +20,7 @@ export default function LanguageSwitcher({ className = '' }) {
     <div ref={ref} className={`relative ${className}`}>
       <button
         onClick={() => setOpen(!open)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/60 backdrop-blur px-2.5 py-1.5 text-xs text-foreground hover:bg-secondary/70 transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/60 backdrop-blur min-h-11 px-2.5 text-xs text-foreground hover:bg-secondary/70 transition-colors"
       >
         <Globe className="w-3.5 h-3.5" />
         <span className="font-mono max-w-[90px] truncate">{current.name}</span>
@@ -32,7 +32,7 @@ export default function LanguageSwitcher({ className = '' }) {
             <button
               key={l.code}
               onClick={() => { changeLang(l.code); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-sm flex items-center justify-between hover:bg-secondary transition-colors ${
+              className={`w-full text-left px-3 min-h-11 text-sm flex items-center justify-between hover:bg-secondary transition-colors ${
                 l.code === lang ? 'text-foreground' : 'text-muted-foreground'
               }`}
             >

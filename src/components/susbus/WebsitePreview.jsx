@@ -30,7 +30,7 @@ export default function WebsitePreview({ url }) {
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
         />
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground font-mono">{t('iframe_blocked')}</p>
+      <p className="mt-2 text-xs text-muted-foreground font-mono">{t('iframe_blocked')}</p>
     </div>
   );
 }

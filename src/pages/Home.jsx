@@ -6,6 +6,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
+import TopNav from '@/components/susbus/TopNav';
+import PullToRefresh from '@/components/susbus/PullToRefresh';
 import Footer from '@/components/susbus/Footer';
 import { useLanguage } from '@/lib/i18n';
 
@@ -58,10 +60,15 @@ export default function Home() {
   const activeType = inputTypes.find((type) => type.id === inputType);
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col">
-      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-indigo-600/10 blur-[120px]" />
-      <div className="pointer-events-none absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px]" />
+    <div className="min-h-screen bg-background text-foreground relative flex flex-col">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-indigo-600/10 blur-[120px]" />
+        <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px]" />
+      </div>
 
+      <TopNav />
+
+      <PullToRefresh onRefresh={() => { setContent(''); setError(''); setInputType('url'); }}>
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">
         <div className="flex items-center justify-between gap-3 mb-10">
           <LanguageSwitcher />
@@ -92,7 +99,7 @@ export default function Home() {
                 <button
                   key={type.id}
                   onClick={() => setInputType(type.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-lg min-h-11 px-3 text-xs font-medium transition-colors ${
                     active
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'
@@ -134,11 +141,13 @@ export default function Home() {
               </>
             )}
           </Button>
-          <p className="mt-2 text-center text-[11px] text-muted-foreground font-mono">{t('shortcut')}</p>
+          <p className="mt-2 text-center text-xs text-muted-foreground font-mono">{t('shortcut')}</p>
         </div>
       </div>
 
-      <div className="relative max-w-2xl mx-auto px-5 w-full">
+      </PullToRefresh>
+
+      <div className="relative max-w-2xl mx-auto px-5 w-full pb-safe">
         <Footer />
       </div>
     </div>
