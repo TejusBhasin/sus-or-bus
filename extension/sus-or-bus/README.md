@@ -18,6 +18,10 @@ corner with **Continue / Cancel**.
 - **Click interception:** links to a *different* site are paused; the popup shows
   the verdict with Continue / Cancel. Same-site links and Ctrl/Cmd-clicks pass
   straight through.
+- **Full-screen takeover:** open a site directly — a pinned tab, bookmark, or
+  typed address — and the full report covers the screen until you proceed.
+  SUS sites get a smaller proceed button plus a "Find alternative websites"
+  tool that suggests safe, well-known sites for the same job.
 - **Cache + auto-scan:** sites scanned before show their rating instantly; new
   sites are scanned automatically in the background (takes a few seconds the
   first time). Ratings are cached for 7 days per site.

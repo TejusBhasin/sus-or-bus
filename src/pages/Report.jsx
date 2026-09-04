@@ -14,6 +14,7 @@ import VerdictDisplay from '@/components/susbus/VerdictDisplay';
 import PointCard from '@/components/susbus/PointCard';
 import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
+import AlternativesCard from '@/components/susbus/AlternativesCard';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import NerdModeToggle from '@/components/susbus/NerdModeToggle';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
@@ -307,6 +308,13 @@ export default function Report() {
             <span className="text-xs uppercase tracking-wider text-muted-foreground font-mono">bad</span>
           </div>
         </div>
+
+        {/* Safer alternatives for SUS websites */}
+        {report.input_type === 'url' && report.url && !isBus && (
+          <div className="mb-6">
+            <AlternativesCard url={report.url} />
+          </div>
+        )}
 
         {/* Website preview + source code (URL) */}
         {report.input_type === 'url' && report.url && !previewBlocked && (
