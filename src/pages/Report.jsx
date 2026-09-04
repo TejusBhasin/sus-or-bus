@@ -15,6 +15,7 @@ import PointCard from '@/components/susbus/PointCard';
 import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
+import NerdModeToggle from '@/components/susbus/NerdModeToggle';
 import TopNav from '@/components/susbus/TopNav';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
@@ -50,7 +51,11 @@ export default function Report() {
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState('quick');
   const [toast, setToast] = useState('');
-  const [nerdMode] = useState('simple');
+  const [nerdMode, setNerdMode] = useState(() => localStorage.getItem('susbus_nerd_mode') || 'simple');
+
+  useEffect(() => {
+    if (nerdMode) localStorage.setItem('susbus_nerd_mode', nerdMode);
+  }, [nerdMode]);
 
   useEffect(() => {
     base44.entities.Report.get(id)
@@ -154,6 +159,7 @@ export default function Report() {
             {t('new_check')}
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-2">
+            <NerdModeToggle mode={nerdMode} onChange={setNerdMode} />
             <LanguageSwitcher />
             <Link
               to="/settings"
