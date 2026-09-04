@@ -12,7 +12,6 @@ import { format } from 'date-fns';
 import ScoreGauge from '@/components/susbus/ScoreGauge';
 import VerdictDisplay from '@/components/susbus/VerdictDisplay';
 import PointCard from '@/components/susbus/PointCard';
-import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
 import AlternativesCard from '@/components/susbus/AlternativesCard';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
@@ -57,7 +56,6 @@ export default function Report() {
   const [tab, setTab] = useState('quick');
   const [toast, setToast] = useState('');
   const [rerunning, setRerunning] = useState(false);
-  const [previewBlocked, setPreviewBlocked] = useState(false);
   const [nerdMode, setNerdMode] = useState(() => localStorage.getItem('susbus_nerd_mode') || 'simple');
 
   useEffect(() => {
@@ -316,11 +314,10 @@ export default function Report() {
           </div>
         )}
 
-        {/* Website preview + source code (URL) */}
-        {report.input_type === 'url' && report.url && !previewBlocked && (
-          <div className="space-y-4 mb-6">
-            <WebsitePreview url={report.url} onBlocked={setPreviewBlocked} />
-            {report.source_code && <SourceCodeViewer code={report.source_code} />}
+        {/* Source code (URL) */}
+        {report.input_type === 'url' && report.url && report.source_code && (
+          <div className="mb-6">
+            <SourceCodeViewer code={report.source_code} />
           </div>
         )}
 
@@ -443,11 +440,6 @@ export default function Report() {
               </div>
             )}
           </div>
-        )}
-
-        {/* Embed that refused to connect — moved to the very bottom */}
-        {report.input_type === 'url' && report.url && previewBlocked && (
-          <WebsitePreview url={report.url} onBlocked={setPreviewBlocked} />
         )}
       </div>
 
