@@ -6,7 +6,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles, Settings } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
-import TopNav from '@/components/susbus/TopNav';
 import PullToRefresh from '@/components/susbus/PullToRefresh';
 import Footer from '@/components/susbus/Footer';
 import { useLanguage } from '@/lib/i18n';
@@ -60,13 +59,11 @@ export default function Home() {
   const activeType = inputTypes.find((type) => type.id === inputType);
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative flex flex-col">
+    <div className="min-h-screen bg-background text-foreground relative flex flex-col pt-safe">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-indigo-600/10 blur-[120px]" />
         <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px]" />
       </div>
-
-      <TopNav />
 
       <PullToRefresh onRefresh={() => { setContent(''); setError(''); setInputType('url'); }}>
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">
