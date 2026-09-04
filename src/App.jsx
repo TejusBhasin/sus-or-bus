@@ -13,8 +13,6 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { Navigate } from 'react-router-dom';
 import Terms from '@/pages/Terms';
 import Privacy from '@/pages/Privacy';
 import { LanguageProvider } from '@/lib/i18n';
@@ -52,10 +50,8 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/report/:id" element={<Report />} />
-      </Route>
+      <Route path="/" element={<Home />} />
+      <Route path="/report/:id" element={<Report />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
