@@ -3,9 +3,9 @@ import { cn } from '@/lib/utils';
 import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Lock, Eye, Code2, Mail, Globe, BadgeCheck, User, Brain } from 'lucide-react';
 
 const severityStyles = {
-  good: { ring: 'border-emerald-500/30 bg-emerald-500/5', icon: CheckCircle2, iconColor: 'text-emerald-400' },
-  warning: { ring: 'border-amber-500/30 bg-amber-500/5', icon: AlertTriangle, iconColor: 'text-amber-400' },
-  bad: { ring: 'border-red-500/30 bg-red-500/5', icon: XCircle, iconColor: 'text-red-400' }
+  good: { ring: 'border-emerald-500/30 bg-emerald-500/5', icon: CheckCircle2, iconColor: 'text-emerald-500 dark:text-emerald-400' },
+  warning: { ring: 'border-amber-500/30 bg-amber-500/5', icon: AlertTriangle, iconColor: 'text-amber-500 dark:text-amber-400' },
+  bad: { ring: 'border-red-500/30 bg-red-500/5', icon: XCircle, iconColor: 'text-red-500 dark:text-red-400' }
 };
 
 const categoryIcons = {
@@ -36,17 +36,17 @@ export default function PointCard({ point, mode = 'nerd' }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <h4 className="font-semibold text-slate-100 text-sm">{point.title}</h4>
-          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-mono text-slate-400 border border-slate-700 rounded px-1.5 py-0.5">
+          <h4 className="font-semibold text-foreground text-sm">{point.title}</h4>
+          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
             <CatIcon className="w-3 h-3" />
             {point.category}
           </span>
         </div>
 
         {showSimple && simple && (
-          <div className={cn('mt-1 text-sm leading-relaxed', showTech ? 'text-slate-300' : 'text-slate-400')}>
+          <div className={cn('mt-1 text-sm leading-relaxed', showTech ? 'text-foreground' : 'text-muted-foreground')}>
             {showTech && (
-              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-400/70 align-middle">
+              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400/70 align-middle">
                 <User className="w-3 h-3 inline" />simple
               </span>
             )}
@@ -55,9 +55,9 @@ export default function PointCard({ point, mode = 'nerd' }) {
         )}
 
         {showTech && tech && tech !== simple && (
-          <div className={cn('mt-1 text-sm leading-relaxed', showSimple ? 'text-slate-500' : 'text-slate-400')}>
+          <div className={cn('mt-1 text-sm leading-relaxed', showSimple ? 'text-muted-foreground' : 'text-muted-foreground')}>
             {showSimple && (
-              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-400/70 align-middle">
+              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-600 dark:text-indigo-400/70 align-middle">
                 <Brain className="w-3 h-3 inline" />nerd
               </span>
             )}
@@ -66,7 +66,7 @@ export default function PointCard({ point, mode = 'nerd' }) {
         )}
 
         {!showTech && tech === simple && (
-          <p className="mt-1 text-sm text-slate-400 leading-relaxed">{simple}</p>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{simple}</p>
         )}
       </div>
     </div>

@@ -10,7 +10,7 @@ const MODES = [
 
 export default function NerdModeToggle({ mode, onChange }) {
   return (
-    <div className="inline-flex items-center rounded-lg border border-slate-800 bg-slate-900/60 p-0.5">
+    <div className="inline-flex items-center rounded-lg border border-border bg-card/60 p-0.5">
       {MODES.map((m) => {
         const Icon = m.icon;
         const active = mode === m.id;
@@ -21,8 +21,8 @@ export default function NerdModeToggle({ mode, onChange }) {
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
               active
-                ? 'bg-slate-100 text-slate-900'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             )}
             aria-pressed={active}
           >

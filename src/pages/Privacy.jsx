@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
+import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
 import { useLanguage } from '@/lib/i18n';
 
@@ -24,7 +25,7 @@ const sections = [
   },
   {
     h: '5. Cookies and Local Storage',
-    p: 'We use local storage to remember your language preference. We do not use advertising cookies.'
+    p: 'We use local storage to remember your language and theme preferences. We do not use advertising cookies.'
   },
   {
     h: '6. Third-Party Services',
@@ -32,7 +33,7 @@ const sections = [
   },
   {
     h: '7. Your Rights',
-    p: 'You may access, correct, or delete your report history. For other data requests, contact us through the app.'
+    p: 'You may access, correct, or delete your report history. For other data requests, contact us at support@susorbus.com.'
   },
   {
     h: '8. Security',
@@ -47,28 +48,31 @@ const sections = [
 export default function Privacy() {
   const { t } = useLanguage();
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-2xl mx-auto px-5 py-12">
-        <div className="flex items-center justify-between mb-10">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-10">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
             {t('back_to_app')}
           </Link>
-          <LanguageSwitcher />
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] text-slate-500 mb-3">
+        <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground mb-3">
           <ShieldCheck className="w-4 h-4" />
           legal
         </div>
         <h1 className="text-4xl font-black tracking-tighter">{t('privacy_title')}</h1>
-        <p className="mt-2 text-sm text-slate-500 font-mono">{t('last_updated')}: September 4, 2026</p>
+        <p className="mt-2 text-sm text-muted-foreground font-mono">{t('last_updated')}: September 4, 2026</p>
 
         <div className="mt-10 space-y-8">
           {sections.map((s, i) => (
             <section key={i}>
-              <h2 className="text-lg font-semibold text-slate-100 mb-2">{s.h}</h2>
-              <p className="text-slate-400 leading-relaxed text-[15px]">{s.p}</p>
+              <h2 className="text-lg font-semibold text-foreground mb-2">{s.h}</h2>
+              <p className="text-muted-foreground leading-relaxed text-[15px]">{s.p}</p>
             </section>
           ))}
         </div>

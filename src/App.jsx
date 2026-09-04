@@ -17,6 +17,7 @@ const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const Terms = lazy(() => import('@/pages/Terms'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
 import { LanguageProvider } from '@/lib/i18n';
+import { ThemeProvider } from '@/lib/theme';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -24,8 +25,8 @@ const AuthenticatedApp = () => {
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-border border-t-foreground rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -44,8 +45,8 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Suspense fallback={
-      <div className="fixed inset-0 flex items-center justify-center bg-slate-950">
-        <div className="w-8 h-8 border-4 border-slate-800 border-t-slate-200 rounded-full animate-spin"></div>
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-border border-t-foreground rounded-full animate-spin"></div>
       </div>
     }>
     <Routes>
@@ -68,6 +69,7 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
+    <ThemeProvider>
     <LanguageProvider>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -79,6 +81,7 @@ function App() {
       </QueryClientProvider>
     </AuthProvider>
     </LanguageProvider>
+    </ThemeProvider>
   )
 }
 

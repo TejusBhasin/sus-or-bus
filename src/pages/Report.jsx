@@ -16,6 +16,7 @@ import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import NerdModeToggle from '@/components/susbus/NerdModeToggle';
+import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
 
 const typeIcon = { url: Globe, html: Code2, code: Code2, email: Mail, text: FileText };
@@ -25,14 +26,14 @@ function DetailList({ icon: Icon, title, items }) {
   if (!items || items.length === 0) return null;
   return (
     <div>
-      <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-slate-200">
-        <Icon className="w-4 h-4 text-slate-400" />
+      <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-foreground">
+        <Icon className="w-4 h-4 text-muted-foreground" />
         {title}
       </div>
       <ul className="space-y-1.5">
         {items.map((it, i) => (
-          <li key={i} className="text-sm text-slate-400 flex gap-2">
-            <span className="text-slate-600">•</span>
+          <li key={i} className="text-sm text-muted-foreground flex gap-2">
+            <span className="text-muted-foreground/50">•</span>
             <span>{it}</span>
           </li>
         ))}
@@ -110,16 +111,16 @@ export default function Report() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-7 h-7 animate-spin text-slate-600" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (notFound || !report) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-center px-6">
-        <p className="text-slate-400">{t('not_found')}</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
+        <p className="text-muted-foreground">{t('not_found')}</p>
         <Link to="/">
           <Button className="mt-4">{t('back_home')}</Button>
         </Link>
@@ -140,26 +141,27 @@ export default function Report() {
   const created = report.created_date ? format(new Date(report.created_date), 'MMM d, yyyy • HH:mm') : '';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-background text-foreground relative overflow-hidden flex flex-col">
       <div
         className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[600px] rounded-full blur-[130px]"
         style={{ background: isBus ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.09)' }}
       />
 
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">
-        <div className="flex items-center justify-between mb-8">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
             {t('new_check')}
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <NerdModeToggle mode={nerdMode} onChange={setNerdMode} />
             <LanguageSwitcher />
+            <ThemeToggle />
           </div>
         </div>
 
         {/* Verdict hero */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur p-6 sm:p-8 mb-6">
+        <div className="rounded-2xl border border-border bg-card/60 backdrop-blur p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <ScoreGauge score={report.score} verdict={report.verdict} label={scoreLabel} />
             <div className="flex-1 text-center sm:text-left">
@@ -167,30 +169,30 @@ export default function Report() {
               {(nerdMode === 'simple' || nerdMode === 'both') && report.simple_summary && (
                 <div className="mt-4 leading-relaxed">
                   {nerdMode === 'both' && (
-                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-400/70">
+                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400/70">
                       <User className="w-3 h-3 inline" />simple
                     </span>
                   )}
-                  <p className={nerdMode === 'both' ? 'inline text-slate-300' : 'text-slate-300'}>{report.simple_summary}</p>
+                  <p className={nerdMode === 'both' ? 'inline text-foreground' : 'text-foreground'}>{report.simple_summary}</p>
                 </div>
               )}
               {(nerdMode === 'nerd' || nerdMode === 'both') && (
                 <div className={nerdMode === 'both' ? 'mt-2 leading-relaxed' : 'mt-4 leading-relaxed'}>
                   {nerdMode === 'both' && (
-                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-400/70">
+                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-600 dark:text-indigo-400/70">
                       <Brain className="w-3 h-3 inline" />nerd
                     </span>
                   )}
-                  <p className={nerdMode === 'both' ? 'inline text-slate-500' : 'text-slate-300'}>{report.summary}</p>
+                  <p className={nerdMode === 'both' ? 'inline text-muted-foreground' : 'text-foreground'}>{report.summary}</p>
                 </div>
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono text-slate-400 border border-slate-700 rounded px-2 py-1">
+                <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono text-muted-foreground border border-border rounded px-2 py-1">
                   <Icon className="w-3 h-3" />
                   {t(typeLabelKey[report.input_type] || 'tab_text')}
                 </span>
                 {created && (
-                  <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono text-slate-500">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono text-muted-foreground">
                     <Clock className="w-3 h-3" />
                     {created}
                   </span>
@@ -201,15 +203,15 @@ export default function Report() {
 
           {/* Action bar */}
           <div className="mt-6 flex flex-wrap gap-2 justify-center sm:justify-start">
-            <Button variant="outline" size="sm" onClick={handleShare} className="bg-slate-900/60 border-slate-700 text-slate-200 hover:bg-slate-800">
+            <Button variant="outline" size="sm" onClick={handleShare} className="bg-card/60 border-border text-foreground hover:bg-secondary">
               <Share2 className="w-3.5 h-3.5 mr-1.5" />
               {t('share')}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleCopyVerdict} className="bg-slate-900/60 border-slate-700 text-slate-200 hover:bg-slate-800">
+            <Button variant="outline" size="sm" onClick={handleCopyVerdict} className="bg-card/60 border-border text-foreground hover:bg-secondary">
               <Copy className="w-3.5 h-3.5 mr-1.5" />
               {t('copy_verdict')}
             </Button>
-            <Button variant="outline" size="sm" onClick={handleExportPdf} className="bg-slate-900/60 border-slate-700 text-slate-200 hover:bg-slate-800">
+            <Button variant="outline" size="sm" onClick={handleExportPdf} className="bg-card/60 border-border text-foreground hover:bg-secondary">
               <Download className="w-3.5 h-3.5 mr-1.5" />
               {t('export_pdf')}
             </Button>
@@ -219,25 +221,25 @@ export default function Report() {
         {/* Finding stats */}
         <div className="grid grid-cols-3 gap-2 mb-6">
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-            <div className="flex items-center justify-center gap-1 text-emerald-400">
+            <div className="flex items-center justify-center gap-1 text-emerald-500 dark:text-emerald-400">
               <CheckCircle2 className="w-4 h-4" />
               <span className="text-2xl font-bold">{counts.good}</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">good</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">good</span>
           </div>
           <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-            <div className="flex items-center justify-center gap-1 text-amber-400">
+            <div className="flex items-center justify-center gap-1 text-amber-500 dark:text-amber-400">
               <AlertTriangle className="w-4 h-4" />
               <span className="text-2xl font-bold">{counts.warning}</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">warning</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">warning</span>
           </div>
           <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-center">
-            <div className="flex items-center justify-center gap-1 text-red-400">
+            <div className="flex items-center justify-center gap-1 text-red-500 dark:text-red-400">
               <XCircle className="w-4 h-4" />
               <span className="text-2xl font-bold">{counts.bad}</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">bad</span>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">bad</span>
           </div>
         </div>
 
@@ -258,21 +260,21 @@ export default function Report() {
 
         {/* Preview meta (URL) */}
         {report.input_type === 'url' && (report.preview_title || report.preview_description) && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 mb-6">
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-slate-500 mb-3">
+          <div className="rounded-2xl border border-border bg-card/60 p-5 mb-6">
+            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-3">
               <Globe className="w-3.5 h-3.5" />
               {t('preview')}
             </div>
-            <h3 className="font-semibold text-slate-100 truncate">{report.preview_title || report.url}</h3>
+            <h3 className="font-semibold text-foreground truncate">{report.preview_title || report.url}</h3>
             {report.preview_description && (
-              <p className="mt-1 text-sm text-slate-400 line-clamp-3">{report.preview_description}</p>
+              <p className="mt-1 text-sm text-muted-foreground line-clamp-3">{report.preview_description}</p>
             )}
             {report.url && (
               <a
                 href={report.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-mono break-all"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 font-mono break-all"
               >
                 <ExternalLink className="w-3 h-3 shrink-0" />
                 {report.url}
@@ -282,7 +284,7 @@ export default function Report() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-5 p-1 bg-slate-900/60 rounded-lg border border-slate-800 w-fit">
+        <div className="flex gap-1 mb-5 p-1 bg-card/60 rounded-lg border border-border w-fit">
           {[
             { id: 'quick', label: t('score_tab') },
             { id: 'detailed', label: t('detailed_tab') }
@@ -291,7 +293,7 @@ export default function Report() {
               key={tb.id}
               onClick={() => setTab(tb.id)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                tab === tb.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-200'
+                tab === tb.id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {tb.label}
@@ -301,7 +303,7 @@ export default function Report() {
 
         {tab === 'quick' ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-slate-500 mb-1">
+            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-1">
               <Eye className="w-3.5 h-3.5" />
               {t('breakdown')}
             </div>
@@ -311,8 +313,8 @@ export default function Report() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-5">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-slate-500">
+            <div className="rounded-2xl border border-border bg-card/60 p-6 space-y-5">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">
                 <Server className="w-3.5 h-3.5" />
                 {t('full_report')}
               </div>
@@ -323,19 +325,19 @@ export default function Report() {
               <DetailList icon={Server} title={t('technologies')} items={d.technologies} />
               {d.codeNotes && (
                 <div>
-                  <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-slate-200">
-                    <Code2 className="w-4 h-4 text-slate-400" />
+                  <div className="flex items-center gap-2 mb-2 text-sm font-semibold text-foreground">
+                    <Code2 className="w-4 h-4 text-muted-foreground" />
                     {t('code_notes')}
                   </div>
                   {(nerdMode === 'simple' || nerdMode === 'both') && d.simple_code_notes && (
-                    <p className={cn('text-sm text-slate-400 leading-relaxed', nerdMode === 'both' && 'mb-2')}>
-                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-emerald-400/70 mr-2">simple</span>}
+                    <p className={cn('text-sm text-muted-foreground leading-relaxed', nerdMode === 'both' && 'mb-2')}>
+                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-emerald-600 dark:text-emerald-400/70 mr-2">simple</span>}
                       {d.simple_code_notes}
                     </p>
                   )}
                   {(nerdMode === 'nerd' || nerdMode === 'both') && (
-                    <p className="text-sm text-slate-400 leading-relaxed">
-                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-indigo-400/70 mr-2">nerd</span>}
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-indigo-600 dark:text-indigo-400/70 mr-2">nerd</span>}
                       {d.codeNotes}
                     </p>
                   )}
@@ -344,7 +346,7 @@ export default function Report() {
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-slate-500">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">
                 <Eye className="w-3.5 h-3.5" />
                 {t('all_findings')}
               </div>
@@ -354,12 +356,12 @@ export default function Report() {
             </div>
 
             {report.input_content && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-                <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-slate-500 mb-3">
+              <div className="rounded-2xl border border-border bg-background/60 p-5">
+                <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground mb-3">
                   <FileText className="w-3.5 h-3.5" />
                   {t('original_input')}
                 </div>
-                <pre className="text-xs text-slate-400 font-mono whitespace-pre-wrap break-all max-h-60 overflow-auto">
+                <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap break-all max-h-60 overflow-auto">
                   {report.input_content}
                 </pre>
               </div>
@@ -374,8 +376,8 @@ export default function Report() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-100 shadow-xl flex items-center gap-2">
-          <Check className="w-4 h-4 text-emerald-400" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-popover text-popover-foreground px-4 py-2 text-sm shadow-xl flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-500" />
           {toast}
         </div>
       )}
