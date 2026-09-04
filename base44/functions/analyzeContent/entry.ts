@@ -37,7 +37,39 @@ export default async function(req) {
     if (inputType === 'url') {
       let u = content;
       if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+      try {
+        const p = new URL(u);
+        p.host = p.host.toLowerCase(); // normalize so shared-cache lookups always match
+        u = p.origin + (p.pathname && p.pathname !== '/' ? p.pathname : '') + p.search + p.hash;
+      } catch {}
       url = u;
+      // Shared cache: if anyone scanned this exact site in the last 7 days,
+      // reuse that report instead of spending a new LLM call.
+      const recent = await base44.asServiceRole.entities.Report.filter(
+        { input_type: 'url', url: u },
+        '-created_date',
+        1
+      );
+      const prev = recent && recent[0];
+      if (prev && Date.now() - new Date(prev.created_date).getTime() < 7 * 24 * 60 * 60 * 1000) {
+        return Response.json({
+          verdict: prev.verdict,
+          score: prev.score,
+          summary: prev.simple_summary || prev.summary,
+          points: prev.points || [],
+          details: prev.details || {},
+          preview: {
+            title: prev.preview_title || '',
+            description: prev.preview_description || '',
+            status: null,
+            finalUrl: u,
+            fetchError: ''
+          },
+          sourceCode: prev.source_code || '',
+          reportId: prev.id,
+          cached: true
+        });
+      }
       try {
         const resp = await fetch(u, {
           headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' },

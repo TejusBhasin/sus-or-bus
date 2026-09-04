@@ -36,6 +36,42 @@ function isGoogleSearch(url) {
   }
 }
 
+// Well-known, reputable domains that skip scanning entirely — 0 credits and
+// no popups. Most browsing happens on sites like these.
+const TRUSTED_DOMAINS = new Set([
+  'google.com', 'youtube.com', 'gmail.com', 'googleapis.com', 'gstatic.com',
+  'facebook.com', 'instagram.com', 'whatsapp.com', 'messenger.com',
+  'wikipedia.org', 'wikimedia.org', 'reddit.com', 'x.com', 'twitter.com',
+  'linkedin.com', 'tiktok.com', 'pinterest.com', 'snapchat.com',
+  'amazon.com', 'ebay.com', 'walmart.com', 'target.com', 'etsy.com', 'shopify.com',
+  'microsoft.com', 'live.com', 'office.com', 'bing.com', 'github.com',
+  'stackoverflow.com', 'apple.com', 'icloud.com', 'netflix.com', 'hulu.com',
+  'disneyplus.com', 'spotify.com', 'yahoo.com', 'duckduckgo.com',
+  'nytimes.com', 'cnn.com', 'bbc.com', 'bbc.co.uk', 'reuters.com',
+  'apnews.com', 'espn.com', 'weather.com', 'zoom.us', 'dropbox.com',
+  'adobe.com', 'canva.com', 'notion.so', 'figma.com', 'openai.com',
+  'anthropic.com', 'paypal.com', 'chase.com', 'bankofamerica.com',
+  'wellsfargo.com', 'capitalone.com', 'americanexpress.com', 'visa.com',
+  'mastercard.com', 'cloudflare.com', 'mozilla.org', 'wordpress.com',
+  'medium.com', 'quora.com', 'yelp.com', 'tripadvisor.com', 'booking.com',
+  'airbnb.com', 'expedia.com', 'mapquest.com', 'roblox.com', 'steampowered.com',
+  'discord.com', 'twitch.tv', 'soundcloud.com', 'imdb.com', 'dictionary.com'
+]);
+
+// True when the URL's host is a trusted domain (or a subdomain of one).
+function isTrusted(url) {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, '');
+    if (TRUSTED_DOMAINS.has(h)) return true;
+    for (const d of TRUSTED_DOMAINS) {
+      if (h.endsWith('.' + d)) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // The user's "Don't ask again" list, persisted in local storage.
 async function isWhitelisted(origin) {
   const store = await chrome.storage.local.get('sb_whitelist');
@@ -174,6 +210,7 @@ async function handleCheck(url, sender) {
   const origin = originOf(url);
   if (!origin) return { status: 'pass' }; // not a checkable website — let it through
   if (isGoogleSearch(url)) return { status: 'pass' }; // Google Search pages are never checked
+  if (isTrusted(url)) return { status: 'pass' }; // well-known safe domain — no scan needed
   if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
 
   const cache = await readCache();
@@ -206,6 +243,7 @@ async function handleGate(msg, sender) {
     return { status: 'pass' };
   }
   if (isGoogleSearch(msg.url)) return { status: 'pass' }; // Google Search pages are never checked
+  if (isTrusted(msg.url)) return { status: 'pass' }; // well-known safe domain — no scan needed
   if (msg.refOrigin && msg.refOrigin === origin) return { status: 'pass' }; // same-site chain
   if (consumeAllow(origin)) return { status: 'pass' }; // already approved this hop
   if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
@@ -230,6 +268,30 @@ async function handleGate(msg, sender) {
 }
 
 async function handleAlternatives(url) {
+  const origin = originOf(url);
+  // Suggested alternatives rarely change — cache them for 30 days so repeat
+  // lookups on the same site cost 0 credits.
+  if (origin) {
+    const store = await chrome.storage.local.get('sb_alt_cache');
+    const cache = store.sb_alt_cache || {};
+    const hit = cache[origin];
+    if (hit && Date.now() - hit.at < 30 * 24 * 60 * 60 * 1000) {
+      return { alternatives: hit.list };
+    }
+    const resp = await fetch(ALT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data || data.error) throw new Error((data && data.error) || 'Lookup failed');
+    const list = data.alternatives || [];
+    if (list.length) {
+      cache[origin] = { list, at: Date.now() };
+      await chrome.storage.local.set({ sb_alt_cache: cache });
+    }
+    return { alternatives: list };
+  }
   const resp = await fetch(ALT_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
