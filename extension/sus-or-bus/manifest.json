@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Sus or Bus — website safety check",
   "version": "1.3.0",
-  "description": "Before you open a website — from a link, a search result, a bookmark or a pinned tab — see its SUS or BUS rating and decide whether to continue.",
+  "description": "Before you open a website see its SUS or BUS rating and decide whether to continue",
   "permissions": ["storage"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": { "service_worker": "background.js" },
