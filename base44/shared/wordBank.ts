@@ -68,7 +68,8 @@ export const TITLE_BANKS: Record<string, string[]> = {
   unreadable: ['Content unreadable to us', 'Binary or locked-down document', 'Couldn\'t read the contents'],
   http_form: ['Form submits over HTTP', 'Unencrypted form post', 'Plaintext form transmission'],
   marketing: ['Bulk marketing markers', 'Newsletter / promo fingerprints', 'Direct-mail vibes'],
-  susp_script_host: ['Scripts from a risky host', 'Third-party code from a red-flag host', 'Script host raises eyebrows']
+  susp_script_host: ['Scripts from a risky host', 'Third-party code from a red-flag host', 'Script host raises eyebrows'],
+  site_error: ['Site didn\'t respond properly', 'Broken or unreachable site', 'Error on load', 'The site failed to answer']
 };
 
 /* ---------- Point descriptions: {n}, {names}, {host}, {brand} etc. get filled ---------- */
@@ -133,8 +134,8 @@ export const DESC_BANKS: Record<string, DescPair> = {
     simple: ['The page calls itself {brand} but lives at a totally different address — the real company would use its own site.', 'It claims to be {brand}, but the address says otherwise.', 'Fake {brand} branding on a stranger\'s website.']
   },
   urgency: {
-    tech: ['Pressure language detected ({sample} among {n} hits): manufactured urgency is the core lever of social engineering.', '{n} urgency patterns in the copy ({sample}) — engineered time pressure to short-circuit judgment.', 'The text leans on countdown-style manipulation ({sample}); legitimate services rarely need to threaten timelines.'],
-    simple: ['The page rushes you ("{sample}") — real companies don\'t threaten you with timers to make you act fast.', 'It pushes you to hurry, which scammers do so you don\'t have time to think.', '"{sample}" — that\'s a scare tactic, not customer service.']
+    tech: ['Pressure language detected ({sample}, {n} hit total): manufactured urgency is the core lever of social engineering.', 'Engineered time pressure in the copy ({sample}; {n} hit total) — the classic trick to short-circuit judgment.', 'The text leans on countdown-style manipulation ({sample}); legitimate services rarely need to threaten timelines.'],
+    simple: ['The page rushes you ({sample}) — real companies don\'t threaten you with timers to make you act fast.', 'It pushes you to hurry, which scammers do so you don\'t have time to think.', '{sample} — that\'s a scare tactic, not customer service.']
   },
   credentials: {
     tech: ['The message requests sensitive material ({sample}), a direct credential-harvest ask.', 'It solicits secrets like {sample} — no legitimate correspondent needs this over a link.', 'Phishing payload: it asks for {sample}, the exact bundle identity thieves shop for.'],
@@ -142,7 +143,7 @@ export const DESC_BANKS: Record<string, DescPair> = {
   },
   scam_words: {
     tech: ['Recurring scam-trope phrasing ({sample}, plus {n} more) — the classic reward/zero-risk vocabulary.', 'The copy leans on too-good-to-be-true tropes ({sample}); {n} hits in total. That vocabulary cluster is scam-native.', 'Reward-promise language detected ({sample}): {n} separate tropes, consistent with advance-fee and giveaway fraud.'],
-    simple: ['It uses the magic words scammers love ({sample}) — free money vibes that never hold up.', 'Too good to be true? It is. ("{sample}")', 'The promises here ("{sample}") are the stuff of scams, not reality.']
+    simple: ['It uses the magic words scammers love ({sample}) — free money vibes that never hold up.', 'Too good to be true? It is. ({sample})', 'The promises here ({sample}) are the stuff of scams, not reality.']
   },
   attachments: {
     tech: ['The message references dangerous attachment types ({sample}) — the primary ransomware/malware delivery vector.', 'Attachment bait detected: {sample}. Executable or archive payloads are the top malware delivery route.', 'It pushes you to open {sample} — one double-click from a bad day.'],
@@ -215,6 +216,10 @@ export const DESC_BANKS: Record<string, DescPair> = {
   susp_script_host: {
     tech: ['The page loads third-party code from a host on a red-flag TLD ({host}) — off-origin scripts from throwaway infrastructure.', 'Scripts stream in from {host}, a host pattern seen in malvertising chains.', 'External script origin {host} matches disposable-domain characteristics.'],
     simple: ['Some code on this page comes from a shady outside address ({host}).', 'The page borrows code from a sketchy source ({host}).', 'Risky outside code ({host}) runs on this page.']
+  },
+  site_error: {
+    tech: ['The site failed to respond properly ({detail}) — scans of its live content are incomplete, so treat any verdict with extra caution.', 'An error was returned on load ({detail}); the analysis covers the address itself but not a working page.', 'The origin didn\'t serve a healthy page ({detail}), which limits how much could be verified.'],
+    simple: ['The website wouldn\'t load properly ({detail}), so we could only judge the address itself.', 'The site is broken or unreachable right now ({detail}) — be extra careful.', 'It didn\'t answer correctly when we visited ({detail}).']
   }
 };
 
@@ -224,26 +229,36 @@ const SUMMARY_PARTS: Record<string, string[][]> = {
   bus_tech: [
     ['Nothing here raises an eyebrow —', 'This one sits firmly on the safe side:', 'The scan came back quiet:', 'No meaningful attack surface found:', 'All safety probes came back green:', 'Clean bill of health:', 'This one bussin\':', 'No red flags survived the scan:', 'The coast is clear:', 'Checks out —'],
     ['{host} passed our structural checks without a whisper of trouble', '{host} looks like a normal, well-kept site rather than a trap', 'the request chain, markup and scripts of {host} behaved like a legitimate service', '{host} shows the fingerprints of a real, maintained product', 'nothing in the markup of {host} tried to hide, redirect or collect quietly', 'the configuration of {host} matches what healthy sites look like', '{host} kept its scripts, forms and connections consistent and transparent', 'every layer we inspected on {host} held up under scrutiny', '{host} gave us no obfuscation, no sneaky redirects and no odd hosts', 'the surface of {host} is exactly what it claims to be'],
-    ['safe to proceed.', 'verdict: bussin\'.', 'we\'d click it.', 'bus all the way.', 'go on, it\'s fine.']
+    ['Safe to proceed.', 'Verdict: bussin\'.', 'We\'d click it.', 'Bus all the way.', 'Go on, it\'s fine.']
   ],
   sus_tech: [
     ['Something\'s off here —', 'This one smells sus:', 'Multiple tripwires fired:', 'We\'d think twice:', 'Red flags outweigh the green ones:', 'This one leans sketchy:', 'The scan found trouble:', 'Not trustworthy by our book:', 'Too many alarms went off:', 'Hard pass territory:'],
     ['{host} tripped our safety probes, the worst being {top}', 'the structure of {host} matches patterns we see in phishing and scam pages', '{host} combines {top} with other signals typical of untrustworthy sites', 'the markup of {host} tries harder to hide than a legit site ever would', '{host} exhibits {top}, which healthy sites simply don\'t have', 'we found {top} plus enough corroborating signals to fail the site', 'the setup of {host} is inconsistent with what it claims to be', '{host} shows the signature moves of a page built to deceive', 'from {top} to quieter irregularities, {host} doesn\'t hold up', '{host} carries the exact mix of tricks that burns users'],
-    ['steer clear.', 'verdict: sus.', 'we\'d close this tab.', 'not worth the risk.', 'sus, through and through.']
+    ['Steer clear.', 'Verdict: sus.', 'We\'d close this tab.', 'Not worth the risk.', 'Sus, through and through.']
   ],
   bus_simple: [
     ['Good news —', 'This one\'s safe:', 'You can relax:', 'We checked it over —', 'All clear:', 'No worries here:', 'This site\'s fine:', 'Looks totally normal:', 'Nothing scary found:', 'It passed —'],
     ['{host} didn\'t do anything sneaky while we watched it', 'everything we saw on {host} is what a normal website does', '{host} behaves like an ordinary, honest website', 'we looked under the hood of {host} and found nothing weird', 'no one at {host} is trying to trick you or grab your stuff', '{host} kept things simple and honest', 'the site doesn\'t try to hide anything from you', 'it\'s built the same way other trusted sites are', 'your info stays yours on {host}', 'there\'s nothing fishy about {host}'],
-    ['go ahead and use it.', 'you\'re good.', 'bussin\'!', 'it gets our thumbs-up.', 'no red flags at all.']
+    ['Go ahead and use it.', 'You\'re good.', 'Bussin\'!', 'It gets our thumbs-up.', 'No red flags at all.']
   ],
   sus_simple: [
     ['Heads up —', 'Be careful:', 'Something\'s wrong:', 'We don\'t trust this one:', 'Stop before you click:', 'This looks like trouble:', 'Not safe:', 'Yikes:', 'Trust your gut and skip this:', 'Danger:'],
     ['{host} did things that scam websites usually do, like {top}', 'the people behind {host} seem to be after your info or money', '{host} is set up the same way fake websites are', 'we found {top}, and that\'s a big warning sign', 'instead of being honest, {host} hides what it\'s doing', '{top} showed up, and honest websites never do that', 'this page on {host} smells like a trick', '{host} acts like a wolf in sheep\'s clothing', '{host} breaks the rules safe websites follow', 'there are too many tricks here to call {host} safe'],
-    ['close this tab.', 'don\'t put in your info.', 'find a different site.', 'better safe than sorry.', 'we\'d skip this one.']
+    ['Close this tab.', 'Don\'t put in your info.', 'Find a different site.', 'Better safe than sorry.', 'We\'d skip this one.']
+  ],
+  bus_error: [
+    ['Conditional pass —', 'With one caveat:', 'A qualified yes:', 'Half the picture:', 'Verdict, with an asterisk:', 'Cleared with a footnote:', 'OK, but hear us out:', 'Passing, provisionally:', 'Mostly fine:', 'Checked what we could —'],
+    ['{host} didn\'t load properly ({detail}), so this verdict covers the address, not a live page', 'we could only inspect the address of {host} because {detail}', '{host} was unreachable ({detail}); nothing suspicious was found in what we could see', 'the scan of {host} ran with a blind spot: {detail}', 'since {detail}, treat this as a partial check of {host}', 'we verified what we could of {host}, though {detail}', '{host} kept its record clean, but {detail}', 'the address of {host} raised nothing, while {detail}', 'coverage was limited because {detail}, but {host} looks ordinary', '{host} gets the benefit of the doubt — {detail}'],
+    ['Proceed, but stay alert.', 'We\'d retry the site later.', 'Don\'t lower your guard.', 'Verdict: bus, barely.', 'If it loads later, scan it again.']
+  ],
+  bus_error_simple: [
+    ['Sort of safe —', 'Safe, but…', 'Halfway checked:', 'Mostly good news —', 'We think it\'s fine —', 'Okay, with a "but":', 'Safe-ish:', 'A careful yes:', 'Good, with a catch:', 'Pass, barely —'],
+    ['the website wouldn\'t load right ({detail}), so we could only check the address itself', 'we couldn\'t see the actual page ({detail}), only its name', '{host} stayed quiet, but it also stayed broken ({detail})', 'part of the site was a no-show ({detail})', 'we only got half a look because {detail}', 'the page behind the name didn\'t come up ({detail})', 'nothing bad turned up in what we saw, but {detail}', 'the address is fine; the site itself wouldn\'t open ({detail})', 'we had to judge {host} with one eye closed ({detail})', 'the site played hard to get ({detail}), but showed nothing scary'],
+    ['Try it again later.', 'Keep your eyes open.', 'It\'s probably fine.', 'No red flags in what we could see.', 'If it opens later, check it again.']
   ]
 };
 
-export const SUMMARY_KEYS = ['bus_tech', 'sus_tech', 'bus_simple', 'sus_simple'];
+export const SUMMARY_KEYS = ['bus_tech', 'sus_tech', 'bus_simple', 'sus_simple', 'bus_error', 'bus_error_simple'];
 export const VARIANTS_PER_KEY = 500;
 
 export function expandSummaryVariant(key: string, idx: number): string {
@@ -251,5 +266,5 @@ export function expandSummaryVariant(key: string, idx: number): string {
   if (!parts) return '';
   const i = ((idx % VARIANTS_PER_KEY) + VARIANTS_PER_KEY) % VARIANTS_PER_KEY;
   const [openers, mids, closers] = parts;
-  return `${openers[i % 10]} ${mids[Math.floor(i / 10) % 10]} ${closers[Math.floor(i / 100) % 5]}`;
+  return `${openers[i % 10]} ${mids[Math.floor(i / 10) % 10]}. ${closers[Math.floor(i / 100) % 5]}`;
 }

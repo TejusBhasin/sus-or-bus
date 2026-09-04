@@ -113,12 +113,18 @@ export default async function(req) {
 
     /* ---------- Deterministic analysis (zero AI, zero credits) ---------- */
 
+    const siteProblem = preview.fetchError
+      ? 'it could not be reached'
+      : preview.status && preview.status >= 400
+        ? `it answered with HTTP ${preview.status}`
+        : '';
     const analysis = runAnalysis(
       inputType,
-      inputType === 'url' || inputType === 'document' ? '' : content,
+      inputType === 'url' ? url : (inputType === 'document' ? '' : content),
       inputType === 'url' ? analysisContent : '',
       fileName,
-      docText
+      docText,
+      siteProblem
     );
 
     // Wording: every phrase is picked from variant banks with a seeded RNG
@@ -152,7 +158,8 @@ export default async function(req) {
       host: siteLabel,
       top: (topBad ? topBad.title : 'no notable findings').toLowerCase(),
       n: redCount,
-      score: analysis.score
+      score: analysis.score,
+      detail: siteProblem || 'it could not be reached'
     };
 
     async function pickSummary(key: string): Promise<string> {
@@ -164,8 +171,8 @@ export default async function(req) {
       return fillTemplate(expandSummaryVariant(key, idx), summaryValues);
     }
 
-    const techKey = analysis.verdict === 'bus' ? 'bus_tech' : 'sus_tech';
-    const simpleKey = analysis.verdict === 'bus' ? 'bus_simple' : 'sus_simple';
+    const techKey = analysis.verdict === 'bus' ? (siteProblem ? 'bus_error' : 'bus_tech') : 'sus_tech';
+    const simpleKey = analysis.verdict === 'bus' ? (siteProblem ? 'bus_error_simple' : 'bus_simple') : 'sus_simple';
     const summary = await pickSummary(techKey);
     const simpleSummary = await pickSummary(simpleKey);
 

@@ -44,7 +44,8 @@ const BRANDS: Record<string, string> = {
   dropbox: 'dropbox.com', linkedin: 'linkedin.com', icloud: 'icloud.com', office365: 'microsoft.com'
 };
 
-const URGENCY_PHRASES = ['act now', 'immediately', 'urgent', 'within 24 hours', 'account suspended', 'account will be closed', 'verify your account', 'confirm your identity', 'final notice', 'last warning', 'limited time', 'expires in', 'don\'t delay', 'act today', 'immediate action'];
+const STRONG_URGENCY = ['act now', 'account suspended', 'account will be closed', 'within 24 hours', 'final notice', 'last warning', 'verify your account', 'confirm your identity', 'don\'t delay', 'act today', 'immediate action required', 'expires today'];
+const WEAK_URGENCY = ['immediately', 'urgent', 'limited time', 'expires in', 'hurry', 'right away'];
 
 const CREDENTIAL_PHRASES = ['password', 'social security', 'ssn', 'bank account number', 'credit card number', 'verify your identity', 'confirm your account', 'login credentials', 'routing number', 'mother\'s maiden name', 'pin code', 'one-time code', 'otp code'];
 
@@ -176,8 +177,10 @@ export function urlFindings(url: string, includeHttpCheck = true): Finding[] {
     f.push({ id: 'at_trick', severity: 'bad', category: 'security', weight: -18, values: { host } });
   }
 
+  // Digit/homoglyph-swapped lookalikes: paypa1 -> paypal
+  const normHost = host.replace(/1/g, 'l').replace(/0/g, 'o').replace(/3/g, 'e').replace(/5/g, 's').replace(/\$/g, 's').replace(/rn/g, 'm');
   for (const [brand, official] of Object.entries(BRANDS)) {
-    if (host.includes(brand) && !host.endsWith(official) && !host.endsWith('.' + official)) {
+    if ((host.includes(brand) || normHost.includes(brand)) && !host.endsWith(official) && !host.endsWith('.' + official)) {
       f.push({ id: 'lookalike', severity: 'bad', category: 'reputation', weight: -28, values: { brand, host } });
       break;
     }
@@ -234,8 +237,9 @@ export function htmlFindings(html: string, pageUrl: string) {
       const action = fm[1];
       if (action && /^https?:\/\//i.test(action)) {
         const actionHost = hostOf(action);
-        if (pageHost && actionHost && actionHost !== pageHost) {
-          f.push({ id: 'phishing_form', severity: 'bad', category: 'security', weight: -30, values: { host: pageHost, formHost: actionHost } });
+        const actionIsRisky = urlFindings(action, false).some((x) => ['susp_tld', 'ip_host', 'punycode', 'lookalike', 'at_trick'].includes(x.id));
+        if ((pageHost && actionHost && actionHost !== pageHost) || (!pageHost && actionIsRisky)) {
+          f.push({ id: 'phishing_form', severity: 'bad', category: 'security', weight: -30, values: { host: pageHost || 'this page', formHost: actionHost || action } });
         } else if (action.toLowerCase().startsWith('http://')) {
           f.push({ id: 'http_form', severity: 'bad', category: 'security', weight: -10, values: {} });
         } else {
@@ -261,11 +265,13 @@ export function htmlFindings(html: string, pageUrl: string) {
     }
   }
 
-  // Hidden iframe
-  const iframeRe = /<iframe[^>]*(?:display\s*:\s*none|visibility\s*:\s*hidden|width=["']0|height=["']0|hidden)[^>]*src=["']([^"']+)["'][^>]*>/gi;
-  let im;
-  while ((im = iframeRe.exec(html))) {
-    f.push({ id: 'hidden_iframe', severity: 'bad', category: 'security', weight: -14, values: { iframeHost: hostOf(im[1]) || im[1] } });
+  // Hidden iframes (markers can appear before or after src)
+  const iframeTags = html.match(/<iframe[^>]*>/gi) || [];
+  for (const tag of iframeTags) {
+    if (/display\s*:\s*none|visibility\s*:\s*hidden|width=["']0|height=["']0|\shidden/.test(tag)) {
+      const src = tag.match(/src=["']([^"']+)["']/i);
+      if (src) f.push({ id: 'hidden_iframe', severity: 'bad', category: 'security', weight: -14, values: { iframeHost: hostOf(src[1]) || src[1] } });
+    }
   }
 
   // External script hosts
@@ -347,12 +353,17 @@ export function textFindings(text: string, isEmail: boolean): Finding[] {
   const f: Finding[] = [];
   const lower = (text || '').toLowerCase();
 
-  const urgency = hitPhrases(lower, URGENCY_PHRASES);
-  if (urgency.length > 0) {
+  // Urgency only counts when it's a real pressure tactic: one strong phrase,
+  // or several weak ones stacking up (a lone "immediately" is just a word).
+  const strongUrgency = hitPhrases(lower, STRONG_URGENCY);
+  const weakUrgency = hitPhrases(lower, WEAK_URGENCY);
+  if (strongUrgency.length > 0 || weakUrgency.length >= 3) {
+    const strong = strongUrgency.length > 0;
+    const hits = strong ? strongUrgency : weakUrgency;
     f.push({
-      id: 'urgency', severity: 'bad', category: isEmail ? 'email' : 'content',
-      weight: -Math.min(15, urgency.length * 5),
-      values: { n: urgency.length, sample: `“${urgency[0]}”` }
+      id: 'urgency', severity: strong ? 'bad' : 'warning', category: isEmail ? 'email' : 'content',
+      weight: strong ? -Math.min(16, strongUrgency.length * 8) : -5,
+      values: { n: hits.length, sample: `“${hits[0]}”` }
     });
   }
 
@@ -511,6 +522,7 @@ const FLAG_TEXT: Record<string, { red?: string; green?: string }> = {
   trackers: { red: 'Third-party trackers present' },
   login_form: { green: 'Login form posts to its own origin' },
   marketing: { red: 'Bulk marketing markers' },
+  site_error: { red: 'Site failed to respond properly' },
   unreadable: { red: 'Contents could not be extracted for review' },
   tls: { green: 'Serves over HTTPS' },
   csp: { green: 'Content Security Policy present' },
@@ -521,18 +533,23 @@ const FLAG_TEXT: Record<string, { red?: string; green?: string }> = {
   ext_scripts: { green: 'Third-party scripts are mainstream and disclosed' }
 };
 
-export function runAnalysis(inputType: string, content: string, html: string, fileName: string, docText: string): AnalysisResult {
+export function runAnalysis(inputType: string, content: string, html: string, fileName: string, docText: string, siteProblem = ''): AnalysisResult {
   let findings: Finding[] = [];
   const trackers: string[] = [];
   const technologies: string[] = [];
 
   if (inputType === 'url') {
     findings.push(...urlFindings(content, false));
-    const res = htmlFindings(html || '', content);
-    findings.push(...res.f);
-    trackers.push(...res.trackers);
-    technologies.push(...res.technologies);
-    if (hostOf(content).startsWith('https')) {
+    if (siteProblem) {
+      findings.push({ id: 'site_error', severity: 'warning', category: 'content', weight: -8, values: { detail: siteProblem } });
+    }
+    if (html && html.trim().length > 0) {
+      const res = htmlFindings(html, content);
+      findings.push(...res.f);
+      trackers.push(...res.trackers);
+      technologies.push(...res.technologies);
+    }
+    if (/^https:\/\//i.test(content)) {
       findings.push({ id: 'tls', severity: 'good', category: 'security', weight: 5, values: { host: hostOf(content) } });
     }
   } else if (inputType === 'html') {
