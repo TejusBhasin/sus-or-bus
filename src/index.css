@@ -87,6 +87,31 @@
   }
 
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body overscroll-none;
+  }
+
+  button, nav, [role="tab"], [role="tablist"], [role="switch"] {
+    @apply select-none;
+  }
+
+  pre, [class*="overflow-auto"], [class*="overflow-y-auto"], [class*="overflow-x-auto"] {
+    overscroll-behavior: none;
+    scrollbar-width: none;
+  }
+
+  pre::-webkit-scrollbar,
+  [class*="overflow-auto"]::-webkit-scrollbar,
+  [class*="overflow-y-auto"]::-webkit-scrollbar,
+  [class*="overflow-x-auto"]::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 2rem);
   }
 }

@@ -18,15 +18,15 @@ export default function RecentReports({ reports }) {
           <Link
             key={r.id}
             to={`/report/${r.id}`}
-            className="group flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-slate-700 transition-colors p-3"
+            className="group flex items-center gap-3 rounded-lg border border-border bg-card/50 hover:bg-secondary/60 hover:border-muted-foreground/30 transition-colors p-3"
           >
-            <div className={cn('w-2.5 h-2.5 rounded-full shrink-0', isBus ? 'bg-emerald-400' : 'bg-red-400')} />
-            <Icon className="w-4 h-4 text-slate-500 shrink-0" />
-            <span className="text-sm text-slate-200 truncate flex-1">{label}</span>
-            <span className={cn('text-sm font-mono font-semibold', isBus ? 'text-emerald-400' : 'text-red-400')}>
+            <div className={cn('w-2.5 h-2.5 rounded-full shrink-0', isBus ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-red-500 dark:bg-red-400')} />
+            <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-sm text-foreground truncate flex-1">{label}</span>
+            <span className={cn('text-sm font-mono font-semibold', isBus ? 'text-emerald-500 dark:text-emerald-400' : 'text-red-500 dark:text-red-400')}>
               {Math.round(r.score)}
             </span>
-            <Clock className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+            <Clock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
           </Link>
         );
       })}
