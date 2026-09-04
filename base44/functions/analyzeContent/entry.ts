@@ -64,9 +64,10 @@ Return a JSON object with EXACTLY this shape:
 {
   "verdict": "bus" or "sus",
   "score": number 0-100 (100 = very safe),
-  "summary": "one punchy sentence explaining the verdict in plain language",
+  "summary": "one punchy sentence: a TECHNICAL explanation for security-savvy users (may use terms like XSS, CSP, obfuscation, etc.)",
+  "simple_summary": "one sentence in plain everyday language anyone can understand (no jargon, explain like you're talking to your grandma)",
   "points": [
-    { "title": "short label", "severity": "good" | "warning" | "bad", "category": "privacy" | "security" | "trackers" | "content" | "code" | "email" | "reputation", "description": "1-2 sentence explanation" }
+    { "title": "short label", "severity": "good" | "warning" | "bad", "category": "privacy" | "security" | "trackers" | "content" | "code" | "email" | "reputation", "description": "1-2 sentence TECHNICAL explanation", "simple_description": "1-2 sentence plain-language explanation anyone can understand (no jargon)" }
   ],
   "details": {
     "title": "page/site title if known, else empty string",
@@ -76,14 +77,16 @@ Return a JSON object with EXACTLY this shape:
     "technologies": ["technologies/frameworks detected, if any"],
     "redFlags": ["specific concerns"],
     "greenFlags": ["specific positives"],
-    "codeNotes": "notes about any code/html analyzed, or empty string"
+    "codeNotes": "TECHNICAL notes about any code/html analyzed, or empty string",
+    "simple_code_notes": "plain-language version of the code notes (what it means in everyday terms), or empty string"
   }
 }
 
 Rules:
 - Give 5 to 8 points covering different angles.
 - Score guide: 75-100 = clearly bus, 60-74 = leans bus, 45-59 = leans sus, below 45 = clearly sus. Set "verdict" to match the lean.
-- Be concrete: cite what you actually saw in the input. Never invent facts not supported by the input.`;
+- Be concrete: cite what you actually saw in the input. Never invent facts not supported by the input.
+- The "simple_*" fields must convey the SAME meaning as their technical counterparts but in plain language a non-technical person understands. Never contradict the technical version.`;
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
@@ -93,6 +96,7 @@ Rules:
           verdict: { type: 'string', enum: ['bus', 'sus'] },
           score: { type: 'number' },
           summary: { type: 'string' },
+          simple_summary: { type: 'string' },
           points: {
             type: 'array',
             items: {
@@ -101,7 +105,8 @@ Rules:
                 title: { type: 'string' },
                 severity: { type: 'string' },
                 category: { type: 'string' },
-                description: { type: 'string' }
+                description: { type: 'string' },
+                simple_description: { type: 'string' }
               }
             }
           },
@@ -115,7 +120,8 @@ Rules:
               technologies: { type: 'array', items: { type: 'string' } },
               redFlags: { type: 'array', items: { type: 'string' } },
               greenFlags: { type: 'array', items: { type: 'string' } },
-              codeNotes: { type: 'string' }
+              codeNotes: { type: 'string' },
+              simple_code_notes: { type: 'string' }
             }
           }
         }
@@ -133,8 +139,12 @@ Rules:
       verdict: result.verdict,
       score: result.score,
       summary: result.summary,
+      simple_summary: result.simple_summary || result.summary,
       points: result.points || [],
-      details: result.details || {},
+      details: {
+        ...(result.details || {}),
+        simple_code_notes: (result.details && result.details.simple_code_notes) || (result.details && result.details.codeNotes) || ''
+      },
       preview_title: preview.title || (result.details && result.details.title) || '',
       preview_description: preview.description || (result.details && result.details.description) || '',
       source_code: sourceCode

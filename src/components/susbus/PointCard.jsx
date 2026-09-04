@@ -1,11 +1,11 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Lock, Eye, Code2, Mail, Globe, BadgeCheck } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Lock, Eye, Code2, Mail, Globe, BadgeCheck, User, Brain } from 'lucide-react';
 
 const severityStyles = {
-  good: { ring: 'border-emerald-500/30 bg-emerald-500/5', icon: CheckCircle2, iconColor: 'text-emerald-400', label: 'good' },
-  warning: { ring: 'border-amber-500/30 bg-amber-500/5', icon: AlertTriangle, iconColor: 'text-amber-400', label: 'warning' },
-  bad: { ring: 'border-red-500/30 bg-red-500/5', icon: XCircle, iconColor: 'text-red-400', label: 'bad' }
+  good: { ring: 'border-emerald-500/30 bg-emerald-500/5', icon: CheckCircle2, iconColor: 'text-emerald-400' },
+  warning: { ring: 'border-amber-500/30 bg-amber-500/5', icon: AlertTriangle, iconColor: 'text-amber-400' },
+  bad: { ring: 'border-red-500/30 bg-red-500/5', icon: XCircle, iconColor: 'text-red-400' }
 };
 
 const categoryIcons = {
@@ -18,10 +18,16 @@ const categoryIcons = {
   reputation: BadgeCheck
 };
 
-export default function PointCard({ point }) {
+export default function PointCard({ point, mode = 'nerd' }) {
   const s = severityStyles[point.severity] || severityStyles.warning;
   const SevIcon = s.icon;
   const CatIcon = categoryIcons[point.category] || ShieldCheck;
+
+  const tech = point.description;
+  const simple = point.simple_description || point.description;
+
+  const showSimple = mode === 'simple' || mode === 'both';
+  const showTech = mode === 'nerd' || mode === 'both';
 
   return (
     <div className={cn('rounded-xl border p-4 flex gap-3', s.ring)}>
@@ -36,7 +42,32 @@ export default function PointCard({ point }) {
             {point.category}
           </span>
         </div>
-        <p className="mt-1 text-sm text-slate-400 leading-relaxed">{point.description}</p>
+
+        {showSimple && simple && (
+          <div className={cn('mt-1 text-sm leading-relaxed', showTech ? 'text-slate-300' : 'text-slate-400')}>
+            {showTech && (
+              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-400/70 align-middle">
+                <User className="w-3 h-3 inline" />simple
+              </span>
+            )}
+            {simple}
+          </div>
+        )}
+
+        {showTech && tech && tech !== simple && (
+          <div className={cn('mt-1 text-sm leading-relaxed', showSimple ? 'text-slate-500' : 'text-slate-400')}>
+            {showSimple && (
+              <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-400/70 align-middle">
+                <Brain className="w-3 h-3 inline" />nerd
+              </span>
+            )}
+            {tech}
+          </div>
+        )}
+
+        {!showTech && tech === simple && (
+          <p className="mt-1 text-sm text-slate-400 leading-relaxed">{simple}</p>
+        )}
       </div>
     </div>
   );

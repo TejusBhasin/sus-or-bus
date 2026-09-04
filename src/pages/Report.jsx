@@ -5,9 +5,10 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, ArrowLeft, ExternalLink, Globe, Code2, FileText, Mail, Eye, ShieldAlert,
-  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle
+  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import ScoreGauge from '@/components/susbus/ScoreGauge';
 import VerdictDisplay from '@/components/susbus/VerdictDisplay';
@@ -15,6 +16,7 @@ import PointCard from '@/components/susbus/PointCard';
 import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
+import NerdModeToggle from '@/components/susbus/NerdModeToggle';
 import Footer from '@/components/susbus/Footer';
 
 const typeIcon = { url: Globe, html: Code2, code: Code2, email: Mail, text: FileText };
@@ -48,6 +50,11 @@ export default function Report() {
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState('quick');
   const [toast, setToast] = useState('');
+  const [nerdMode, setNerdMode] = useState(() => localStorage.getItem('susbus_nerd_mode') || 'simple');
+
+  useEffect(() => {
+    if (nerdMode) localStorage.setItem('susbus_nerd_mode', nerdMode);
+  }, [nerdMode]);
 
   useEffect(() => {
     base44.entities.Report.get(id)
@@ -145,7 +152,10 @@ export default function Report() {
             <ArrowLeft className="w-4 h-4" />
             {t('new_check')}
           </Link>
-          <LanguageSwitcher />
+          <div className="flex items-center gap-2">
+            <NerdModeToggle mode={nerdMode} onChange={setNerdMode} />
+            <LanguageSwitcher />
+          </div>
         </div>
 
         {/* Verdict hero */}
@@ -154,7 +164,26 @@ export default function Report() {
             <ScoreGauge score={report.score} verdict={report.verdict} label={scoreLabel} />
             <div className="flex-1 text-center sm:text-left">
               <VerdictDisplay verdict={report.verdict} />
-              <p className="mt-4 text-slate-300 leading-relaxed">{report.summary}</p>
+              {(nerdMode === 'simple' || nerdMode === 'both') && report.simple_summary && (
+                <div className="mt-4 leading-relaxed">
+                  {nerdMode === 'both' && (
+                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-emerald-400/70">
+                      <User className="w-3 h-3 inline" />simple
+                    </span>
+                  )}
+                  <p className={nerdMode === 'both' ? 'inline text-slate-300' : 'text-slate-300'}>{report.simple_summary}</p>
+                </div>
+              )}
+              {(nerdMode === 'nerd' || nerdMode === 'both') && (
+                <div className={nerdMode === 'both' ? 'mt-2 leading-relaxed' : 'mt-4 leading-relaxed'}>
+                  {nerdMode === 'both' && (
+                    <span className="inline-flex items-center gap-1 mr-2 text-[10px] uppercase tracking-wider font-mono text-indigo-400/70">
+                      <Brain className="w-3 h-3 inline" />nerd
+                    </span>
+                  )}
+                  <p className={nerdMode === 'both' ? 'inline text-slate-500' : 'text-slate-300'}>{report.summary}</p>
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
                 <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider font-mono text-slate-400 border border-slate-700 rounded px-2 py-1">
                   <Icon className="w-3 h-3" />
@@ -277,7 +306,7 @@ export default function Report() {
               {t('breakdown')}
             </div>
             {points.map((p, i) => (
-              <PointCard key={i} point={p} />
+              <PointCard key={i} point={p} mode={nerdMode} />
             ))}
           </div>
         ) : (
@@ -298,7 +327,18 @@ export default function Report() {
                     <Code2 className="w-4 h-4 text-slate-400" />
                     {t('code_notes')}
                   </div>
-                  <p className="text-sm text-slate-400 leading-relaxed">{d.codeNotes}</p>
+                  {(nerdMode === 'simple' || nerdMode === 'both') && d.simple_code_notes && (
+                    <p className={cn('text-sm text-slate-400 leading-relaxed', nerdMode === 'both' && 'mb-2')}>
+                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-emerald-400/70 mr-2">simple</span>}
+                      {d.simple_code_notes}
+                    </p>
+                  )}
+                  {(nerdMode === 'nerd' || nerdMode === 'both') && (
+                    <p className="text-sm text-slate-400 leading-relaxed">
+                      {nerdMode === 'both' && <span className="text-[10px] uppercase font-mono text-indigo-400/70 mr-2">nerd</span>}
+                      {d.codeNotes}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -309,7 +349,7 @@ export default function Report() {
                 {t('all_findings')}
               </div>
               {points.map((p, i) => (
-                <PointCard key={i} point={p} />
+                <PointCard key={i} point={p} mode={nerdMode} />
               ))}
             </div>
 

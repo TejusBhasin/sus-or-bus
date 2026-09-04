@@ -31,6 +31,9 @@
     "summary": {
       "type": "string"
     },
+    "simple_summary": {
+      "type": "string"
+    },
     "points": {
       "type": "array",
       "items": {
@@ -51,6 +54,9 @@
             "type": "string"
           },
           "description": {
+            "type": "string"
+          },
+          "simple_description": {
             "type": "string"
           }
         }
@@ -96,6 +102,9 @@
           }
         },
         "codeNotes": {
+          "type": "string"
+        },
+        "simple_code_notes": {
           "type": "string"
         }
       }
