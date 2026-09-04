@@ -15,6 +15,7 @@ const Report = lazy(() => import('@/pages/Report'));
 const Terms = lazy(() => import('@/pages/Terms'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
 const Settings = lazy(() => import('@/pages/Settings'));
+const Faq = lazy(() => import('@/pages/Faq'));
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
 
@@ -71,6 +72,7 @@ const AnimatedRoutes = () => {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/FAQ" element={<Faq />} />
             <Route path="/" element={<Home />} />
             <Route path="/report/:id" element={<Report />} />
             <Route path="*" element={<PageNotFound />} />
