@@ -13,8 +13,6 @@ function extractMeta(html, attr, key) {
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
     const inputType = body.inputType;
@@ -128,7 +126,7 @@ Rules:
       sourceCode = content.slice(0, 20000);
     }
 
-    const report = await base44.entities.Report.create({
+    const report = await base44.asServiceRole.entities.Report.create({
       input_type: inputType,
       input_content: content.slice(0, 5000),
       url,
