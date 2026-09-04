@@ -80,7 +80,7 @@ export default function Extension() {
             <Download className="w-4 h-4" />
             Download the extension
           </a>
-          <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus.zip · v1.3.0 · free</p>
+          <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus.zip · v1.3.1 · free</p>
         </div>
 
         {/* What it is */}
@@ -174,7 +174,7 @@ export default function Extension() {
               <Download className="w-4 h-4" />
               Download for Safari
             </a>
-            <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus-safari.zip · v1.3.0 · macOS 12+</p>
+            <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus-safari.zip · v1.3.1 · macOS 12+</p>
           </div>
           <ol className="mt-4 rounded-2xl border border-border bg-card/60 divide-y divide-border">
             {[
