@@ -36,6 +36,7 @@ export default function Report() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState('quick');
+  const [previewTab, setPreviewTab] = useState('live');
 
   useEffect(() => {
     base44.entities.Report.get(id)
@@ -117,6 +118,54 @@ export default function Report() {
                 {report.url}
               </a>
             )}
+
+            {/* Preview / source code toggle */}
+            <div className="mt-4 flex gap-1 p-1 bg-slate-950/60 rounded-lg border border-slate-800 w-fit">
+              {[
+                { id: 'live', label: 'Live preview', icon: Globe },
+                { id: 'code', label: 'Source code', icon: Code2 }
+              ].map((t) => {
+                const TIcon = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setPreviewTab(t.id)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      previewTab === t.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <TIcon className="w-3.5 h-3.5" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-3">
+              {previewTab === 'live' ? (
+                report.url ? (
+                  <div>
+                    <iframe
+                      src={report.url}
+                      title="Live website preview"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      className="w-full h-[440px] rounded-lg border border-slate-800 bg-white"
+                    />
+                    <p className="mt-2 text-[11px] text-slate-600 font-mono">
+                      Some sites block embedded previews — if it's blank, switch to Source code or open the link directly.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">No URL to preview.</p>
+                )
+              ) : report.raw_html ? (
+                <pre className="text-xs text-slate-300 font-mono whitespace-pre-wrap break-all max-h-[440px] overflow-auto rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+                  {report.raw_html}
+                </pre>
+              ) : (
+                <p className="text-sm text-slate-500">No source code available for this input.</p>
+              )}
+            </div>
           </div>
         )}
 

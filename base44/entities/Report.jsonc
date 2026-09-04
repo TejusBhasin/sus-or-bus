@@ -18,6 +18,9 @@
     "url": {
       "type": "string"
     },
+    "raw_html": {
+      "type": "string"
+    },
     "verdict": {
       "type": "string",
       "enum": [

@@ -132,7 +132,8 @@ Rules:
       points: result.points || [],
       details: result.details || {},
       preview_title: preview.title || (result.details && result.details.title) || '',
-      preview_description: preview.description || (result.details && result.details.description) || ''
+      preview_description: preview.description || (result.details && result.details.description) || '',
+      raw_html: inputType === 'url' ? analysisContent.slice(0, 20000) : ''
     });
 
     return Response.json({
