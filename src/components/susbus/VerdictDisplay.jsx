@@ -19,6 +19,14 @@ export default function VerdictDisplay({ verdict }) {
       <p className="mt-3 text-sm text-muted-foreground font-mono">
         {isBus ? t('v_bus') : t('v_sus')}
       </p>
+      <p
+        className={cn(
+          'mt-2 text-sm font-semibold font-mono',
+          isBus ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+        )}
+      >
+        {t('final_verdict')}: {isBus ? t('verdict_valid') : t('verdict_not_valid')}
+      </p>
     </div>
   );
 }

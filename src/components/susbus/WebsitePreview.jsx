@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ExternalLink, Globe } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 
-export default function WebsitePreview({ url }) {
+export default function WebsitePreview({ url, onBlocked }) {
   const { t } = useLanguage();
+  const loadedRef = useRef(false);
+
+  // If the page never loads (refuses to connect), let the parent move the embed to the bottom
+  useEffect(() => {
+    loadedRef.current = false;
+    const timer = setTimeout(() => {
+      if (!loadedRef.current && onBlocked) onBlocked(true);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [url, onBlocked]);
+
   return (
     <div className="rounded-2xl border border-border bg-card/60 p-5">
       <div className="flex items-center justify-between mb-3">
@@ -28,6 +39,7 @@ export default function WebsitePreview({ url }) {
           title="website preview"
           loading="lazy"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          onLoad={() => { loadedRef.current = true; }}
         />
       </div>
       <p className="mt-2 text-xs text-muted-foreground font-mono">{t('iframe_blocked')}</p>

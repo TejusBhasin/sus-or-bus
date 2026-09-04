@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft, ExternalLink, Globe, Code2, FileText, Mail, Eye, ShieldAlert,
-  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain, Settings
+  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain, Settings, RotateCw
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -16,11 +16,11 @@ import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import NerdModeToggle from '@/components/susbus/NerdModeToggle';
-import TopNav from '@/components/susbus/TopNav';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
-import ReportSkeleton from '@/components/susbus/ReportSkeleton';
-import { getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
+import AnalyzingLoader from '@/components/susbus/AnalyzingLoader';
+import { analyzeContent } from '@/functions/analyzeContent';
+import { setPendingReport, getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
 
 const typeIcon = { url: Globe, html: Code2, code: Code2, email: Mail, text: FileText };
 const typeLabelKey = { url: 'tab_url', html: 'tab_html', code: 'tab_code', email: 'tab_email', text: 'tab_text' };
@@ -55,6 +55,8 @@ export default function Report() {
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState('quick');
   const [toast, setToast] = useState('');
+  const [rerunning, setRerunning] = useState(false);
+  const [previewBlocked, setPreviewBlocked] = useState(false);
   const [nerdMode, setNerdMode] = useState(() => localStorage.getItem('susbus_nerd_mode') || 'simple');
 
   useEffect(() => {
@@ -118,6 +120,22 @@ export default function Report() {
     showToast(t('verdict_copied'));
   };
 
+  const handleRerun = () => {
+    if (rerunning) return;
+    const source = report.input_type === 'url' ? report.url : report.input_content;
+    if (!source) return;
+    const payload = { inputType: report.input_type, content: source };
+    if (report.input_type === 'document' && report.url) payload.fileUrl = report.url;
+    setRerunning(true);
+    const promise = analyzeContent(payload).then((res) => {
+      if (res.data?.error) throw new Error(res.data.error);
+      return res;
+    });
+    promise.catch(() => {}); // rejection is surfaced on the report route
+    setPendingReport(promise);
+    navigate('/report/pending');
+  };
+
   const handleExportPdf = async () => {
     const { jsPDF } = await import('jspdf');
     const isBus = report.verdict === 'bus';
@@ -148,7 +166,7 @@ export default function Report() {
   };
 
   if (loading || isPending) {
-    return <ReportSkeleton />;
+    return <AnalyzingLoader />;
   }
 
   if (notFound || !report) {
@@ -175,15 +193,13 @@ export default function Report() {
   const created = report.created_date ? format(new Date(report.created_date), 'MMM d, yyyy • HH:mm') : '';
 
   return (
-    <div className="min-h-screen bg-background text-foreground relative flex flex-col">
+    <div className="min-h-screen bg-background text-foreground relative flex flex-col pt-safe">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[600px] rounded-full blur-[130px]"
           style={{ background: isBus ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.09)' }}
         />
       </div>
-
-      <TopNav />
 
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
@@ -248,6 +264,10 @@ export default function Report() {
 
           {/* Action bar */}
           <div className="mt-6 flex flex-wrap gap-2 justify-center sm:justify-start">
+            <Button variant="outline" size="sm" onClick={handleRerun} disabled={rerunning} className="bg-card/60 border-border text-foreground hover:bg-secondary">
+              <RotateCw className="w-3.5 h-3.5 mr-1.5" />
+              {t('rerun_scan')}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleShare} className="bg-card/60 border-border text-foreground hover:bg-secondary">
               <Share2 className="w-3.5 h-3.5 mr-1.5" />
               {t('share')}
@@ -289,9 +309,9 @@ export default function Report() {
         </div>
 
         {/* Website preview + source code (URL) */}
-        {report.input_type === 'url' && report.url && (
+        {report.input_type === 'url' && report.url && !previewBlocked && (
           <div className="space-y-4 mb-6">
-            <WebsitePreview url={report.url} />
+            <WebsitePreview url={report.url} onBlocked={setPreviewBlocked} />
             {report.source_code && <SourceCodeViewer code={report.source_code} />}
           </div>
         )}
@@ -415,6 +435,11 @@ export default function Report() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Embed that refused to connect — moved to the very bottom */}
+        {report.input_type === 'url' && report.url && previewBlocked && (
+          <WebsitePreview url={report.url} onBlocked={setPreviewBlocked} />
         )}
       </div>
 

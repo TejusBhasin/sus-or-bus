@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { analyzeContent } from '@/functions/analyzeContent';
+import { base44 } from '@/api/base44Client';
 import { setPendingReport, getAnalyzeError, clearAnalyzeError } from '@/lib/pendingReport';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles, Settings } from 'lucide-react';
+import { Loader2, Globe, Code2, FileText, FileUp, Mail, ShieldAlert, Sparkles, Settings } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import PullToRefresh from '@/components/susbus/PullToRefresh';
+import DocumentUpload from '@/components/susbus/DocumentUpload';
 import Footer from '@/components/susbus/Footer';
 import { useLanguage } from '@/lib/i18n';
 
@@ -16,7 +18,8 @@ const inputTypes = [
   { id: 'html', labelKey: 'tab_html', icon: Code2, placeholderKey: 'ph_html' },
   { id: 'code', labelKey: 'tab_code', icon: Code2, placeholderKey: 'ph_code' },
   { id: 'email', labelKey: 'tab_email', icon: Mail, placeholderKey: 'ph_email' },
-  { id: 'text', labelKey: 'tab_text', icon: FileText, placeholderKey: 'ph_text' }
+  { id: 'text', labelKey: 'tab_text', icon: FileText, placeholderKey: 'ph_text' },
+  { id: 'document', labelKey: 'tab_doc', icon: FileUp, placeholderKey: 'ph_doc' }
 ];
 
 function autoDetect(content) {
@@ -35,9 +38,10 @@ export default function Home() {
   const [inputType, setInputType] = useState('url');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [docFile, setDocFile] = useState(null);
 
   useEffect(() => {
-    if (content.trim().length > 6) {
+    if (inputType !== 'document' && content.trim().length > 6) {
       const detected = autoDetect(content);
       if (detected !== inputType) setInputType(detected);
     }
@@ -51,10 +55,34 @@ export default function Home() {
     }
   }, []);
 
-  const handleAnalyze = () => {
-    if (!content.trim() || loading) return;
-    setLoading(true);
+  const handleAnalyze = async () => {
+    if (loading) return;
     setError('');
+    if (inputType === 'document') {
+      if (!docFile) return;
+      setLoading(true);
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: docFile });
+        const promise = analyzeContent({
+          inputType: 'document',
+          content: docFile.name,
+          fileName: docFile.name,
+          fileUrl: file_url
+        }).then((res) => {
+          if (res.data?.error) throw new Error(res.data.error);
+          return res;
+        });
+        promise.catch(() => {}); // rejection is surfaced on the report route
+        setPendingReport(promise);
+        navigate('/report/pending');
+      } catch {
+        setError('Could not upload the document — please try again.');
+        setLoading(false);
+      }
+      return;
+    }
+    if (!content.trim()) return;
+    setLoading(true);
     const promise = analyzeContent({ inputType, content }).then((res) => {
       if (res.data?.error) throw new Error(res.data.error);
       return res;
@@ -73,7 +101,7 @@ export default function Home() {
         <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px]" />
       </div>
 
-      <PullToRefresh onRefresh={() => { setContent(''); setError(''); setInputType('url'); }}>
+      <PullToRefresh onRefresh={() => { setContent(''); setError(''); setInputType('url'); setDocFile(null); }}>
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">
         <div className="flex items-center justify-between gap-3 mb-10">
           <LanguageSwitcher />
@@ -126,21 +154,25 @@ export default function Home() {
             })}
           </div>
 
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder={t(activeType?.placeholderKey)}
-            className="min-h-[140px] resize-y bg-background/60 border-border text-foreground placeholder:text-muted-foreground font-mono text-sm focus-visible:ring-ring"
-            onKeyDown={(e) => {
-              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleAnalyze();
-            }}
-          />
+          {inputType === 'document' ? (
+            <DocumentUpload file={docFile} onSelect={setDocFile} onClear={() => setDocFile(null)} />
+          ) : (
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={t(activeType?.placeholderKey)}
+              className="min-h-[140px] resize-y bg-background/60 border-border text-foreground placeholder:text-muted-foreground font-mono text-sm focus-visible:ring-ring"
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleAnalyze();
+              }}
+            />
+          )}
 
           {error && <p className="mt-3 text-sm text-red-500 dark:text-red-400">{error}</p>}
 
           <Button
             onClick={handleAnalyze}
-            disabled={loading || !content.trim()}
+            disabled={loading || (inputType === 'document' ? !docFile : !content.trim())}
             className="mt-4 w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {loading ? (

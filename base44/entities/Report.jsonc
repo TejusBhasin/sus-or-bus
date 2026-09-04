@@ -9,7 +9,8 @@
         "html",
         "code",
         "email",
-        "text"
+        "text",
+        "document"
       ]
     },
     "input_content": {

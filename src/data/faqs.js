@@ -21,11 +21,16 @@ export const faqCategories = [
     id: 'inputs',
     title: 'Supported inputs',
     items: [
-      { q: 'What types of content can I analyze?', a: 'Five kinds: a website URL, raw HTML, source code (any language), an email (including headers), and plain text like chat messages or letters.' },
+      { q: 'What types of content can I analyze?', a: 'Six kinds: a website URL, raw HTML, source code (any language), an email (including headers), plain text like chat messages, and uploaded documents such as PDFs or Word files.' },
       { q: 'Can I paste more than one link at a time?', a: 'Currently one item per check. If you have several links, run each one as its own check — it only takes a few seconds.' },
       { q: 'Is there a size limit on pastes?', a: 'Very large pastes may be trimmed for analysis. For best results, paste the most relevant part of the content.' },
-      { q: 'Can it analyze files or documents?', a: 'Not directly. Open the file, copy its contents, and paste them as text, HTML, or code depending on the file type.' },
+      { q: 'Can it analyze files or documents?', a: 'Yes — switch to the Document tab and upload the file directly. You can also still copy and paste a file\'s contents as text if you prefer.' },
       { q: 'Can it check images or screenshots?', a: 'No — analysis is text-based. If a screenshot contains a message, type or paste the text content instead.' },
+      { q: 'How do I analyze a document?', a: 'Open the Document tab on the home screen, tap the upload area, pick a file, and run the check. The document is uploaded and analyzed like any other input.' },
+      { q: 'What document formats are supported?', a: 'PDF, TXT, Markdown, DOC/DOCX, RTF, CSV, JSON, and HTML files are supported.' },
+      { q: 'Can I upload more than one document at a time?', a: 'No — one document per check, by design. Upload the next document after the first analysis finishes.' },
+      { q: 'Is there a size limit for documents?', a: 'Keep documents under 25 MB. For very large files, paste the most relevant sections as text instead.' },
+      { q: 'Are my uploaded documents stored?', a: 'The document link is saved with its report so you can revisit or share the result. Don\'t upload confidential or sensitive documents.' },
       { q: 'Does it work with shortened links (bit.ly, tinyurl)?', a: 'Yes. Shortened links are resolved and the destination page is analyzed.' },
       { q: 'Can I analyze content written in other languages?', a: 'Yes. The analyzer handles content in many languages, and the interface itself is available in 16 languages.' },
       { q: 'What input type should I pick?', a: 'You don\'t have to pick — the app auto-detects the type as you paste. You can also switch tabs manually before running the check.' }
@@ -181,7 +186,8 @@ export const faqCategories = [
       { q: 'I got "Something went wrong"', a: 'Try the check again. If it keeps failing, email support@susorbus.com with a description and we will look into it.' },
       { q: 'My URL will not analyze', a: 'Make sure it is a full address including https:// (or at least a clear domain). Pages that require a login or that block automated access may not analyze fully.' },
       { q: 'My report link shows "not found"', a: 'The report may have been removed or the link is incomplete. Re-run the check to generate a fresh report.' },
-      { q: 'The live preview will not load', a: 'That is expected for sites that block embedding. The analysis is unaffected — use "Open site" to view it in a new tab if needed.' },
+      { q: 'The live preview will not load', a: 'That is expected for sites that block embedding — the embed is moved to the bottom of the report, and you can open the site in a new tab if you believe it is safe.' },
+      { q: 'My document will not upload', a: 'Check the format (PDF, TXT, DOCX and similar are supported), keep the file under 25 MB, and try again. One document at a time.' },
       { q: 'The language will not switch', a: 'Open Settings and clear local data, then pick your language again. This resets preferences to defaults.' },
       { q: 'The theme does not follow my system setting', a: 'Use the sun/moon toggle to set your preferred theme manually — it is remembered on your device.' }
     ]

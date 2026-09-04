@@ -33,8 +33,11 @@ const translations = {
     copy_code: 'Copy code', code_copied: 'Copied!', live_preview: 'Live website preview', source_code: 'Source code', open_site: 'Open site',
     findings: 'findings', safe: 'Safe', caution: 'Caution', dangerous: 'Dangerous',
     terms_title: 'Terms of Service', privacy_title: 'Privacy Policy', last_updated: 'Last updated', back_to_app: 'Back to app',
-    iframe_blocked: "Some sites block embedding — if the preview is blank, open it in a new tab.",
-    nav_home: 'Home', nav_settings: 'Settings'
+    iframe_blocked: "You can open this in a new tab if you believe it's safe.",
+    nav_home: 'Home', nav_settings: 'Settings',
+    tab_doc: 'Document', ph_doc: 'Upload a document to analyze...',
+    upload_doc: 'Upload a document to analyze', doc_types: 'PDF, TXT, DOCX…', doc_one_limit: '1 document at a time',
+    rerun_scan: 'Rerun scan', final_verdict: 'Final verdict', verdict_valid: 'Valid', verdict_not_valid: 'Not Valid'
   },
   es: {
     badge: 'analizador de seguridad web', tagline: 'Pega un enlace, HTML, código, un correo o cualquier texto. Obtén un veredicto instantáneo — ¿es bussin o sus?',
@@ -49,7 +52,7 @@ const translations = {
     copy_code: 'Copiar código', code_copied: '¡Copiado!', live_preview: 'Vista previa del sitio', source_code: 'Código fuente', open_site: 'Abrir sitio',
     findings: 'hallazgos', safe: 'Seguro', caution: 'Precaución', dangerous: 'Peligroso',
     terms_title: 'Términos de servicio', privacy_title: 'Política de privacidad', last_updated: 'Última actualización', back_to_app: 'Volver a la app',
-    iframe_blocked: 'Algunos sitios bloquean la inserción — si la vista previa está en blanco, ábrela en una pestaña nueva.',
+    iframe_blocked: 'Puedes abrirlo en una pestaña nueva si crees que es seguro.',
     nav_home: 'Inicio', nav_settings: 'Ajustes'
   },
   fr: {
@@ -65,7 +68,7 @@ const translations = {
     copy_code: 'Copier le code', code_copied: 'Copié !', live_preview: 'Aperçu du site', source_code: 'Code source', open_site: 'Ouvrir le site',
     findings: 'résultats', safe: 'Sûr', caution: 'Prudence', dangerous: 'Dangereux',
     terms_title: 'Conditions d\'utilisation', privacy_title: 'Politique de confidentialité', last_updated: 'Dernière mise à jour', back_to_app: 'Retour à l\'app',
-    iframe_blocked: 'Certains sites bloquent l\'intégration — si l\'aperçu est vide, ouvrez-le dans un nouvel onglet.',
+    iframe_blocked: 'Vous pouvez l\'ouvrir dans un nouvel onglet si vous pensez qu\'il est sûr.',
     nav_home: 'Accueil', nav_settings: 'Réglages'
   },
   de: {
@@ -81,7 +84,7 @@ const translations = {
     copy_code: 'Code kopieren', code_copied: 'Kopiert!', live_preview: 'Live-Vorschau der Website', source_code: 'Quellcode', open_site: 'Seite öffnen',
     findings: 'Ergebnisse', safe: 'Sicher', caution: 'Vorsicht', dangerous: 'Gefährlich',
     terms_title: 'Nutzungsbedingungen', privacy_title: 'Datenschutzerklärung', last_updated: 'Zuletzt aktualisiert', back_to_app: 'Zurück zur App',
-    iframe_blocked: 'Einige Seiten blockieren die Einbettung — falls die Vorschau leer ist, öffne sie in einem neuen Tab.',
+    iframe_blocked: 'Du kannst es in einem neuen Tab öffnen, wenn du glaubst, dass es sicher ist.',
     nav_home: 'Start', nav_settings: 'Einstellungen'
   },
   it: {
@@ -97,7 +100,7 @@ const translations = {
     copy_code: 'Copia codice', code_copied: 'Copiato!', live_preview: 'Anteprima sito live', source_code: 'Codice sorgente', open_site: 'Apri sito',
     findings: 'risultati', safe: 'Sicuro', caution: 'Caution', dangerous: 'Pericoloso',
     terms_title: 'Termini di servizio', privacy_title: 'Informativa sulla privacy', last_updated: 'Ultimo aggiornamento', back_to_app: 'Torna all\'app',
-    iframe_blocked: 'Alcuni siti bloccano l\'incorporamento — se l\'anteprima è vuota, aprila in una nuova scheda.',
+    iframe_blocked: 'Puoi aprirlo in una nuova scheda se ritieni che sia sicuro.',
     nav_home: 'Home', nav_settings: 'Impostazioni'
   },
   pt: {
@@ -113,7 +116,7 @@ const translations = {
     copy_code: 'Copiar código', code_copied: 'Copiado!', live_preview: 'Pré-visualização do site', source_code: 'Código-fonte', open_site: 'Abrir site',
     findings: 'resultados', safe: 'Seguro', caution: 'Cautela', dangerous: 'Perigoso',
     terms_title: 'Termos de serviço', privacy_title: 'Política de privacidade', last_updated: 'Última atualização', back_to_app: 'Voltar ao app',
-    iframe_blocked: 'Alguns sites bloqueiam a incorporação — se a pré-visualização estiver em branco, abra em uma nova aba.',
+    iframe_blocked: 'Você pode abri-lo em uma nova aba se acreditar que é seguro.',
     nav_home: 'Início', nav_settings: 'Ajustes'
   },
   nl: {
@@ -129,7 +132,7 @@ const translations = {
     copy_code: 'Code kopiëren', code_copied: 'Gekopieerd!', live_preview: 'Live websitevoorbeeld', source_code: 'Broncode', open_site: 'Site openen',
     findings: 'bevindingen', safe: 'Veilig', caution: 'Let op', dangerous: 'Gevaarlijk',
     terms_title: 'Servicevoorwaarden', privacy_title: 'Privacybeleid', last_updated: 'Laatst bijgewerkt', back_to_app: 'Terug naar app',
-    iframe_blocked: 'Sommige sites blokkeren inbedding — als het voorbeeld leeg is, open het in een nieuw tabblad.',
+    iframe_blocked: 'Je kunt het in een nieuw tabblad openen als je denkt dat het veilig is.',
     nav_home: 'Start', nav_settings: 'Instellingen'
   },
   ru: {
@@ -145,7 +148,7 @@ const translations = {
     copy_code: 'Копировать код', code_copied: 'Скопировано!', live_preview: 'Живой просмотр сайта', source_code: 'Исходный код', open_site: 'Открыть сайт',
     findings: 'выводов', safe: 'Безопасно', caution: 'Осторожно', dangerous: 'Опасно',
     terms_title: 'Условия использования', privacy_title: 'Политика конфиденциальности', last_updated: 'Последнее обновление', back_to_app: 'Вернуться в приложение',
-    iframe_blocked: 'Некоторые сайты блокируют встраивание — если предпросмотр пуст, откройте сайт в новой вкладке.',
+    iframe_blocked: 'Вы можете открыть сайт в новой вкладке, если считаете, что он безопасен.',
     nav_home: 'Главная', nav_settings: 'Настройки'
   },
   zh: {
@@ -161,7 +164,7 @@ const translations = {
     copy_code: '复制代码', code_copied: '已复制！', live_preview: '网站实时预览', source_code: '源代码', open_site: '打开网站',
     findings: '项发现', safe: '安全', caution: '注意', dangerous: '危险',
     terms_title: '服务条款', privacy_title: '隐私政策', last_updated: '最后更新', back_to_app: '返回应用',
-    iframe_blocked: '部分网站禁止嵌入 — 如果预览为空白，请在新标签页中打开。',
+    iframe_blocked: '如果你认为它是安全的，可以在新标签页中打开。',
     nav_home: '首页', nav_settings: '设置'
   },
   ja: {
@@ -177,7 +180,7 @@ const translations = {
     copy_code: 'コードをコピー', code_copied: 'コピーしました！', live_preview: 'サイトのライブプレビュー', source_code: 'ソースコード', open_site: 'サイトを開く',
     findings: '件の所見', safe: '安全', caution: '注意', dangerous: '危険',
     terms_title: '利用規約', privacy_title: 'プライバシーポリシー', last_updated: '最終更新', back_to_app: 'アプリに戻る',
-    iframe_blocked: '一部のサイトは埋め込みをブロックします — プレビューが空白の場合は新しいタブで開いてください。',
+    iframe_blocked: '安全だと思われる場合は、新しいタブで開けます。',
     nav_home: 'ホーム', nav_settings: '設定'
   },
   ko: {
@@ -193,7 +196,7 @@ const translations = {
     copy_code: '코드 복사', code_copied: '복사됨!', live_preview: '사이트 라이브 미리보기', source_code: '소스 코드', open_site: '사이트 열기',
     findings: '개 소견', safe: '안전', caution: '주의', dangerous: '위험',
     terms_title: '서비스 약관', privacy_title: '개인정보 처리방침', last_updated: '최근 업데이트', back_to_app: '앱으로 돌아가기',
-    iframe_blocked: '일부 사이트는 임베드를 차단합니다 — 미리보기가 비어 있으면 새 탭에서 여세요.',
+    iframe_blocked: '안전하다고 생각되면 새 탭에서 열 수 있습니다.',
     nav_home: '홈', nav_settings: '설정'
   },
   ar: {
@@ -209,7 +212,7 @@ const translations = {
     copy_code: 'نسخ الكود', code_copied: 'تم النسخ!', live_preview: 'معاينة مباشرة للموقع', source_code: 'الكود المصدري', open_site: 'فتح الموقع',
     findings: 'نتائج', safe: 'آمن', caution: 'حذر', dangerous: 'خطير',
     terms_title: 'شروط الخدمة', privacy_title: 'سياسة الخصوصية', last_updated: 'آخر تحديث', back_to_app: 'العودة إلى التطبيق',
-    iframe_blocked: 'بعض المواقع تمنع التضمين — إذا كانت المعاينة فارغة، افتحها في تبويب جديد.',
+    iframe_blocked: 'يمكنك فتحه في تبويب جديد إذا كنت تعتقد أنه آمن.',
     nav_home: 'الرئيسية', nav_settings: 'الإعدادات'
   },
   hi: {
@@ -225,7 +228,7 @@ const translations = {
     copy_code: 'कोड कॉपी करें', code_copied: 'कॉपी हो गया!', live_preview: 'वेबसाइट लाइव पूर्वावलोकन', source_code: 'सोर्स कोड', open_site: 'साइट खोलें',
     findings: 'निष्कर्ष', safe: 'सुरक्षित', caution: 'सावधानी', dangerous: 'खतरनाक',
     terms_title: 'सेवा की शर्तें', privacy_title: 'गोपनीयता नीति', last_updated: 'अंतिम अपडेट', back_to_app: 'ऐप पर वापस',
-    iframe_blocked: 'कुछ साइटें एम्बेडिंग रोकती हैं — यदि पूर्वावलोकन खाली हो, तो नई टैब में खोलें।',
+    iframe_blocked: 'यदि आप मानते हैं कि यह सुरक्षित है, तो इसे नई टैब में खोल सकते हैं।',
     nav_home: 'होम', nav_settings: 'सेटिंग्स'
   },
   tr: {
@@ -241,7 +244,7 @@ const translations = {
     copy_code: 'Kodu kopyala', code_copied: 'Kopyalandı!', live_preview: 'Canlı site önizlemesi', source_code: 'Kaynak kod', open_site: 'Siteyi aç',
     findings: 'bulgu', safe: 'Güvenli', caution: 'Dikkat', dangerous: 'Tehlikeli',
     terms_title: 'Hizmet şartları', privacy_title: 'Gizlilik politikası', last_updated: 'Son güncelleme', back_to_app: 'Uygulamaya dön',
-    iframe_blocked: 'Bazı siteler gömülmeyi engeller — önizleme boşsa yeni sekmede açın.',
+    iframe_blocked: 'Güvenli olduğunu düşünüyorsanız yeni sekmede açabilirsiniz.',
     nav_home: 'Ana sayfa', nav_settings: 'Ayarlar'
   },
   sv: {
@@ -257,7 +260,7 @@ const translations = {
     copy_code: 'Kopiera kod', code_copied: 'Kopierat!', live_preview: 'Live-förhandsvisning av webbplats', source_code: 'Källkod', open_site: 'Öppna webbplats',
     findings: 'fynd', safe: 'Säkert', caution: 'Försiktighet', dangerous: 'Farligt',
     terms_title: 'Användarvillkor', privacy_title: 'Integritetspolicy', last_updated: 'Senast uppdaterad', back_to_app: 'Tillbaka till appen',
-    iframe_blocked: 'Vissa sajter blockerar inbäddning — om förhandsvisningen är tom, öppna i en ny flik.',
+    iframe_blocked: 'Du kan öppna den i en ny flik om du tror att den är säker.',
     nav_home: 'Hem', nav_settings: 'Inställningar'
   },
   pl: {
@@ -273,7 +276,7 @@ const translations = {
     copy_code: 'Kopiuj kod', code_copied: 'Skopiowano!', live_preview: 'Podgląd strony na żywo', source_code: 'Kod źródłowy', open_site: 'Otwórz stronę',
     findings: 'ustaleń', safe: 'Bezpieczne', caution: 'Ostrożnie', dangerous: 'Niebezpieczne',
     terms_title: 'Regulamin usługi', privacy_title: 'Polityka prywatności', last_updated: 'Ostatnia aktualizacja', back_to_app: 'Powrót do aplikacji',
-    iframe_blocked: 'Niektóre strony blokują osadzanie — jeśli podgląd jest pusty, otwórz w nowej karcie.',
+    iframe_blocked: 'Możesz otworzyć go w nowej karcie, jeśli uważasz, że jest bezpieczny.',
     nav_home: 'Start', nav_settings: 'Ustawienia'
   }
 };

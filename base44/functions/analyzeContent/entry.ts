@@ -17,9 +17,16 @@ export default async function(req) {
     const body = await req.json();
     const inputType = body.inputType;
     const content = (body.content || '').trim();
-    if (!content) return Response.json({ error: 'Content is required' }, { status: 400 });
-    if (!['url', 'html', 'code', 'email', 'text'].includes(inputType)) {
+    const fileUrl = (body.fileUrl || '').trim();
+    const fileName = (body.fileName || '').trim();
+
+    if (!['url', 'html', 'code', 'email', 'text', 'document'].includes(inputType)) {
       return Response.json({ error: 'Invalid input type' }, { status: 400 });
+    }
+    if (inputType === 'document') {
+      if (!fileUrl) return Response.json({ error: 'A document file is required' }, { status: 400 });
+    } else if (!content) {
+      return Response.json({ error: 'Content is required' }, { status: 400 });
     }
 
     let analysisContent = content;
@@ -50,15 +57,24 @@ export default async function(req) {
       }
     }
 
+    let documentNote = '';
+    if (inputType === 'document') {
+      documentNote = `The user uploaded a document named "${fileName || 'document'}". Read the attached document file carefully and base your analysis on its actual contents.`;
+      analysisContent = 'The document is provided as an attached file.';
+      preview.title = fileName || 'Uploaded document';
+    }
+
     const prompt = `You are "Sus or Bus", a sharp web-safety analyzer. Slang: "Bus" (short for "bussin") means really good / safe / legit. "Sus" means suspicious / sketchy / unsafe.
 
-Analyze the following ${inputType.toUpperCase()} input for safety, privacy, security, and trustworthiness.
+Analyze the following ${inputType === 'document' ? 'DOCUMENT (see the attached file)' : inputType.toUpperCase()} input for safety, privacy, security, and trustworthiness.
+
+${documentNote}
 
 ----- INPUT START -----
 ${analysisContent.slice(0, MAX_ANALYSIS)}
 ----- INPUT END -----
 
-Produce a rigorous but fair assessment. Look for: data collection & privacy practices, third-party trackers, suspicious scripts, phishing/social-engineering signals, misleading content, code safety, reputation signals, and (for emails) spoofing/urgency/red flags.
+Produce a rigorous but fair assessment. Look for: data collection & privacy practices, third-party trackers, suspicious scripts, phishing/social-engineering signals, misleading content, code safety, reputation signals, and (for emails) spoofing/urgency/red flags. For documents, also inspect: suspicious links, requests for sensitive information or payments, scam patterns, malicious instructions, and the legitimacy of the sender's claims.
 
 Return a JSON object with EXACTLY this shape:
 {
@@ -70,8 +86,8 @@ Return a JSON object with EXACTLY this shape:
     { "title": "short label", "severity": "good" | "warning" | "bad", "category": "privacy" | "security" | "trackers" | "content" | "code" | "email" | "reputation", "description": "1-2 sentence TECHNICAL explanation", "simple_description": "1-2 sentence plain-language explanation anyone can understand (no jargon)" }
   ],
   "details": {
-    "title": "page/site title if known, else empty string",
-    "description": "site/page description if known, else empty string",
+    "title": "page/site/document title if known, else empty string",
+    "description": "site/page/document description if known, else empty string",
     "dataCollected": ["data types collected, if any"],
     "trackers": ["tracking/analytics services found, if any"],
     "technologies": ["technologies/frameworks detected, if any"],
@@ -90,6 +106,7 @@ Rules:
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
+      ...(inputType === 'document' ? { file_urls: [fileUrl] } : {}),
       response_json_schema: {
         type: 'object',
         properties: {
@@ -134,8 +151,8 @@ Rules:
 
     const report = await base44.asServiceRole.entities.Report.create({
       input_type: inputType,
-      input_content: content.slice(0, 5000),
-      url,
+      input_content: inputType === 'document' ? `Document: ${fileName || 'uploaded file'}` : content.slice(0, 5000),
+      url: inputType === 'document' ? fileUrl : url,
       verdict: result.verdict,
       score: result.score,
       summary: result.summary,
