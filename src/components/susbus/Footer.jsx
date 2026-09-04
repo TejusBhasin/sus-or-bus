@@ -15,6 +15,7 @@ export default function Footer() {
           <Link to="/terms" className="hover:text-foreground transition-colors">{t('footer_terms')}</Link>
           <Link to="/privacy" className="hover:text-foreground transition-colors">{t('footer_privacy')}</Link>
           <Link to="/FAQ" className="hover:text-foreground transition-colors">FAQ</Link>
+          <Link to="/extension" className="hover:text-foreground transition-colors">Extension</Link>
         </div>
       </div>
     </footer>
