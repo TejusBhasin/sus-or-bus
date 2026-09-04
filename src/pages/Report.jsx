@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { jsPDF } from 'jspdf';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import {
@@ -80,7 +79,8 @@ export default function Report() {
     showToast(t('verdict_copied'));
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
+    const { jsPDF } = await import('jspdf');
     const isBus = report.verdict === 'bus';
     const doc = new jsPDF();
     let y = 20;
