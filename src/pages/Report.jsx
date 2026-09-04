@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import {
   Loader2, ArrowLeft, ExternalLink, Globe, Code2, FileText, Mail, Eye, ShieldAlert,
-  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain
+  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain, Settings
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,6 @@ import PointCard from '@/components/susbus/PointCard';
 import WebsitePreview from '@/components/susbus/WebsitePreview';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
-import NerdModeToggle from '@/components/susbus/NerdModeToggle';
 import TopNav from '@/components/susbus/TopNav';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
@@ -51,11 +50,7 @@ export default function Report() {
   const [notFound, setNotFound] = useState(false);
   const [tab, setTab] = useState('quick');
   const [toast, setToast] = useState('');
-  const [nerdMode, setNerdMode] = useState(() => localStorage.getItem('susbus_nerd_mode') || 'simple');
-
-  useEffect(() => {
-    if (nerdMode) localStorage.setItem('susbus_nerd_mode', nerdMode);
-  }, [nerdMode]);
+  const [nerdMode] = useState('simple');
 
   useEffect(() => {
     base44.entities.Report.get(id)
@@ -159,8 +154,14 @@ export default function Report() {
             {t('new_check')}
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <NerdModeToggle mode={nerdMode} onChange={setNerdMode} />
             <LanguageSwitcher />
+            <Link
+              to="/settings"
+              aria-label="Settings"
+              className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg border border-border bg-card/60 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </Link>
             <ThemeToggle />
           </div>
         </div>

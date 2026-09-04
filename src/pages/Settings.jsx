@@ -14,7 +14,6 @@ export default function Settings() {
   const handleClearLocalData = () => {
     try {
       localStorage.removeItem('susbus_lang');
-      localStorage.removeItem('susbus_nerd_mode');
       localStorage.removeItem('theme');
     } catch {}
     setLocalCleared(true);
@@ -32,7 +31,7 @@ export default function Settings() {
         <div className="mt-8 rounded-2xl border border-border bg-card/60 p-6">
           <p className="text-sm font-semibold text-foreground">Clear local data</p>
           <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-            Removes your saved language, theme, and explanation-mode preferences from this device. Nothing else is stored on your device.
+            Removes your saved language and theme preferences from this device. Nothing else is stored on your device.
           </p>
           {localCleared ? (
             <p className="mt-4 text-sm text-emerald-500 inline-flex items-center gap-1.5">
@@ -50,7 +49,7 @@ export default function Settings() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Clear local data?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This resets your saved language, theme, and explanation-mode preferences on this device. Your reports are not affected.
+                    This resets your saved language and theme preferences on this device. Your reports are not affected.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

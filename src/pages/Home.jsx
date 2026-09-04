@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { analyzeContent } from '@/functions/analyzeContent';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles } from 'lucide-react';
+import { Loader2, Globe, Code2, FileText, Mail, ShieldAlert, Sparkles, Settings } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import TopNav from '@/components/susbus/TopNav';
@@ -72,7 +72,16 @@ export default function Home() {
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">
         <div className="flex items-center justify-between gap-3 mb-10">
           <LanguageSwitcher />
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Link
+              to="/settings"
+              aria-label="Settings"
+              className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg border border-border bg-card/60 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors"
+            >
+              <Settings className="w-4 h-4" />
+            </Link>
+            <ThemeToggle />
+          </div>
         </div>
 
         <div className="text-center mb-10">
