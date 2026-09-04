@@ -45,6 +45,7 @@ const notes = [
   'Cached ratings live only on your device.',
   'Google Search pages (www.google.com/search) are never checked — Sus or Bus stays out of the way there.',
   'See "Don\u2019t ask again for this site" on any popup to whitelist a website — it will never be checked again.',
+  'An account is optional and never required for checking. Create one from the first popup to sync your safe-site and never-visit lists with this website.',
   'A Chrome Web Store version is coming — the unpacked install takes under a minute.'
 ];
 
@@ -79,7 +80,7 @@ export default function Extension() {
             <Download className="w-4 h-4" />
             Download the extension
           </a>
-          <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus.zip · v1.2.0 · free</p>
+          <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus.zip · v1.3.0 · free</p>
         </div>
 
         {/* What it is */}
@@ -173,7 +174,7 @@ export default function Extension() {
               <Download className="w-4 h-4" />
               Download for Safari
             </a>
-            <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus-safari.zip · v1.2.0 · macOS 12+</p>
+            <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus-safari.zip · v1.3.0 · macOS 12+</p>
           </div>
           <ol className="mt-4 rounded-2xl border border-border bg-card/60 divide-y divide-border">
             {[

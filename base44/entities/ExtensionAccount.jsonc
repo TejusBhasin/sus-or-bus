@@ -1,0 +1,58 @@
+{
+  "name": "ExtensionAccount",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string"
+    },
+    "password_salt": {
+      "type": "string"
+    },
+    "password_hash": {
+      "type": "string"
+    },
+    "token": {
+      "type": "string"
+    },
+    "whitelist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "blacklist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "email",
+    "password_salt",
+    "password_hash",
+    "token"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

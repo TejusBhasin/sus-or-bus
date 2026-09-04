@@ -5,6 +5,9 @@
 
 const ENDPOINT = 'https://susbus.base44.app/functions/analyzeContent';
 const ALT_ENDPOINT = 'https://susbus.base44.app/functions/findAlternatives';
+const REGISTER_ENDPOINT = 'https://susbus.base44.app/functions/registerAccount';
+const LOGIN_ENDPOINT = 'https://susbus.base44.app/functions/loginAccount';
+const LISTS_ENDPOINT = 'https://susbus.base44.app/functions/accountLists';
 const APP_ORIGIN = 'https://susbus.base44.app';
 const FRESH_MS = 7 * 24 * 60 * 60 * 1000; // re-scan a site after 7 days
 const MAX_ENTRIES = 500;
@@ -47,6 +50,60 @@ async function addWhitelist(origin) {
     await chrome.storage.local.set({ sb_whitelist: list });
   }
 }
+
+async function addToStorageList(key, origin) {
+  const store = await chrome.storage.local.get(key);
+  const list = store[key] || [];
+  if (!list.includes(origin)) {
+    list.push(origin);
+    await chrome.storage.local.set({ [key]: list });
+  }
+}
+
+async function removeFromStorageList(key, origin) {
+  const store = await chrome.storage.local.get(key);
+  const list = (store[key] || []).filter((o) => o !== origin);
+  await chrome.storage.local.set({ [key]: list });
+}
+
+// Push the device's lists to the user's account (when signed in) so the
+// extension and the Sus or Bus site stay in sync.
+async function syncAccountLists() {
+  const store = await chrome.storage.local.get(['sb_token', 'sb_whitelist', 'sb_blacklist']);
+  if (!store.sb_token) return;
+  await fetch(LISTS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: store.sb_token,
+      whitelist: store.sb_whitelist || [],
+      blacklist: store.sb_blacklist || []
+    })
+  }).catch(() => {});
+}
+
+// On startup: pull the account's lists and merge them into this device, then
+// push the merged result back so both sides match.
+chrome.storage.local.get('sb_token').then((s) => {
+  if (!s.sb_token) return;
+  fetch(LISTS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: s.sb_token })
+  })
+    .then((r) => r.json())
+    .then(async (d) => {
+      if (!d || d.error || (!Array.isArray(d.whitelist) && !Array.isArray(d.blacklist))) return;
+      const store = await chrome.storage.local.get(['sb_whitelist', 'sb_blacklist']);
+      const wl = new Set(store.sb_whitelist || []);
+      const bl = new Set(store.sb_blacklist || []);
+      (d.whitelist || []).forEach((o) => wl.add(o));
+      (d.blacklist || []).forEach((o) => bl.add(o));
+      await chrome.storage.local.set({ sb_whitelist: [...wl], sb_blacklist: [...bl] });
+      syncAccountLists();
+    })
+    .catch(() => {});
+});
 
 async function readCache() {
   const store = await chrome.storage.local.get('sb_cache');
@@ -200,11 +257,58 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === 'sb:whitelist') {
     const origin = originOf(msg.url);
     if (origin) {
-      addWhitelist(origin).catch(() => {}); // remember the site across sessions
+      addWhitelist(origin) // remember the site across sessions
+        .then(syncAccountLists)
+        .catch(() => {});
       allowOrigin(origin); // and let this navigation through
     }
     sendResponse({ status: 'ok' });
     return;
+  }
+  if (msg.type === 'sb:blacklist') {
+    const origin = originOf(msg.url);
+    if (origin) {
+      addToStorageList('sb_blacklist', origin)
+        .then(syncAccountLists)
+        .catch(() => {});
+    }
+    sendResponse({ status: 'ok' });
+    return;
+  }
+  if (msg.type === 'sb:unblacklist') {
+    const origin = originOf(msg.url);
+    if (origin) {
+      removeFromStorageList('sb_blacklist', origin)
+        .then(syncAccountLists)
+        .catch(() => {});
+    }
+    sendResponse({ status: 'ok' });
+    return;
+  }
+  if (msg.type === 'sb:register' || msg.type === 'sb:login') {
+    fetch(msg.type === 'sb:register' ? REGISTER_ENDPOINT : LOGIN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: msg.email, password: msg.password })
+    })
+      .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => null) }))
+      .then(async ({ ok, data }) => {
+        if (!ok || !data || data.error) {
+          sendResponse({ error: (data && data.error) || 'Something went wrong' });
+          return;
+        }
+        await chrome.storage.local.set({ sb_token: data.token, sb_email: data.email, sb_asked: true });
+        const wl = new Set(data.whitelist || []);
+        const bl = new Set(data.blacklist || []);
+        const store = await chrome.storage.local.get(['sb_whitelist', 'sb_blacklist']);
+        (store.sb_whitelist || []).forEach((o) => wl.add(o));
+        (store.sb_blacklist || []).forEach((o) => bl.add(o));
+        await chrome.storage.local.set({ sb_whitelist: [...wl], sb_blacklist: [...bl] });
+        syncAccountLists();
+        sendResponse({ ok: true, token: data.token, email: data.email });
+      })
+      .catch(() => sendResponse({ error: 'Could not reach Sus or Bus right now' }));
+    return true; // async response
   }
   if (msg.type === 'sb:allow') {
     const origin = originOf(msg.url);

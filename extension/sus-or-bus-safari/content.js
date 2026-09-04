@@ -101,6 +101,15 @@
     .sb-alt-name { font-weight: 700; color: #e2e8f0; }
     .sb-alt-host { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; color: #94a3b8; word-break: break-all; }
     .sb-alt-why { margin-top: 2px; font-size: 12px; color: #94a3b8; }
+    .sb-acc { margin-top: 12px; border-top: 1px dashed rgba(148,163,184,0.25); padding-top: 10px; }
+    .sb-acc-q { font-weight: 700; color: #e2e8f0; margin-bottom: 6px; }
+    .sb-acc-note { color: #94a3b8; font-size: 12px; margin-bottom: 10px; line-height: 1.5; }
+    .sb-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .sb-label { font-size: 10px; font-family: ui-monospace, Menlo, Consolas, monospace; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; }
+    .sb-input { width: 100%; box-sizing: border-box; min-height: 38px; border-radius: 9px; border: 1px solid rgba(148,163,184,0.3); background: rgba(15,23,42,0.6); color: #e2e8f0; padding: 0 10px; font-size: 13px; font-family: inherit; }
+    .sb-input:focus { outline: none; border-color: #818cf8; }
+    .sb-err { color: #f87171; font-size: 12px; margin-top: 6px; }
+    .sb-acc-ok { color: #34d399; font-size: 13px; font-weight: 600; }
   `;
 
   function escapeHtml(s) {
@@ -131,16 +140,31 @@
     }
   }
 
-  // Sites the user marked "Don't ask again" — kept in sync with storage so
-  // clicks on them pass straight through with no popup.
+  // Sites the user marked "Don't ask again" (whitelist), sites they blacklisted
+  // to never visit, the optional account session, and whether the one-time
+  // account question was already asked — all kept in sync with storage.
   let whitelist = new Set();
+  let blacklist = new Set();
+  let account = { token: '', email: '' };
+  let asked = false;
+  let lastResult = null;
   chrome.storage.local
-    .get('sb_whitelist')
-    .then((s) => { whitelist = new Set(s.sb_whitelist || []); })
+    .get(['sb_whitelist', 'sb_blacklist', 'sb_token', 'sb_email', 'sb_asked'])
+    .then((s) => {
+      whitelist = new Set(s.sb_whitelist || []);
+      blacklist = new Set(s.sb_blacklist || []);
+      if (s.sb_token) account = { token: s.sb_token, email: s.sb_email || '' };
+      asked = !!s.sb_asked;
+    })
     .catch(() => {});
   if (chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === 'local' && changes.sb_whitelist) whitelist = new Set(changes.sb_whitelist.newValue || []);
+      if (area !== 'local') return;
+      if (changes.sb_whitelist) whitelist = new Set(changes.sb_whitelist.newValue || []);
+      if (changes.sb_blacklist) blacklist = new Set(changes.sb_blacklist.newValue || []);
+      if (changes.sb_token) account = { token: changes.sb_token.newValue || '', email: account.email };
+      if (changes.sb_email) account = { token: account.token, email: changes.sb_email.newValue || '' };
+      if (changes.sb_asked) asked = !!changes.sb_asked.newValue;
     });
   }
 
@@ -164,6 +188,22 @@
         requestAlternatives(pendingUrl);
       } else if (act === 'whitelist' && pendingUrl) {
         whitelistSite(pendingUrl);
+      } else if (act === 'blacklist' && pendingUrl) {
+        blacklistSite(pendingUrl);
+      } else if (act === 'unblacklist' && pendingUrl) {
+        unblacklistSite(pendingUrl);
+      } else if (act === 'acc-no') {
+        markAsked();
+        renderDeclined();
+      } else if (act === 'acc-yes') {
+        markAsked();
+        renderAccountForm(false);
+      } else if (act === 'acc-signin') {
+        renderAccountForm(true);
+      } else if (act === 'acc-submit') {
+        submitAccountForm(t.getAttribute('data-mode') === 'login');
+      } else if (act === 'gotit') {
+        rerenderLast();
       } else if (act === 'openalt') {
         const alt = t.getAttribute('data-url');
         if (alt) {
@@ -222,7 +262,8 @@
       ${points ? `<div class="sb-points">${points}</div>` : ''}
       ${verdict === 'sus' ? '<a class="sb-link sb-report" data-act="alt">Find alternative websites →</a>' : ''}
       ${pendingReportId ? `<a class="sb-link sb-report" data-act="report">Full report →</a>` : ''}
-      <div class="sb-anyway"><a class="sb-link" data-act="whitelist">Don\u2019t ask again for this site</a></div>
+      <div class="sb-anyway"><a class="sb-link" data-act="whitelist">Don\u2019t ask again for this site</a> · <a class="sb-link" data-act="blacklist">Add to blacklist — never visit</a></div>
+      ${accountNudgeHtml()}
     `;
   }
 
@@ -256,6 +297,7 @@
 
   function renderResult(url, d) {
     if (url !== pendingUrl || !d) return;
+    lastResult = d;
     pendingReportId = d.reportId || null;
     const verdict = d.verdict === 'bus' ? 'bus' : 'sus';
     renderCard(`
@@ -300,6 +342,7 @@
 
   function renderTakeoverResult(url, d) {
     if (url !== pendingUrl || !d) return;
+    lastResult = d;
     pendingReportId = d.reportId || null;
     const sus = d.verdict !== 'bus';
     renderCard(`
@@ -398,6 +441,168 @@
     else proceed();
   }
 
+  /* ---------- Optional account ---------- */
+
+  function markAsked() {
+    asked = true;
+    chrome.storage.local.set({ sb_asked: true }).catch(() => {});
+  }
+
+  // The one-time account question — shown inside the first result popup only.
+  function accountNudgeHtml() {
+    if (account.token || asked) return '';
+    return `
+      <div class="sb-acc">
+        <div class="sb-acc-q">Create a free account?</div>
+        <div class="sb-acc-note">Optional — checking sites always works without one. An account syncs your safe-site and never-visit lists between this extension and the Sus or Bus site.</div>
+        <div class="sb-row">
+          <button class="sb-btn go" data-act="acc-yes">Create account</button>
+          <button class="sb-btn" data-act="acc-no">No thanks</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDeclined() {
+    renderCard(`
+      ${headHtml}
+      <div class="sb-body">
+        <div class="sb-url">${escapeHtml(shortUrl(pendingUrl))}</div>
+        <p class="sb-acc-note">No problem — checking sites always works without an account. If you change your mind later, you'll need to uninstall and reinstall the extension to create one.</p>
+        <button class="sb-btn go" data-act="gotit">Got it</button>
+      </div>
+    `);
+  }
+
+  function renderAccountForm(isSignin) {
+    markAsked();
+    renderCard(`
+      ${headHtml}
+      <div class="sb-body">
+        <div class="sb-acc-q">${isSignin ? 'Sign in' : 'Create a free account'}</div>
+        <div class="sb-field">
+          <label class="sb-label" for="sb-email">Email</label>
+          <input id="sb-email" class="sb-input" type="email" autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="sb-field">
+          <label class="sb-label" for="sb-pass">Password</label>
+          <input id="sb-pass" class="sb-input" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+        </div>
+        <div id="sb-acc-err" class="sb-err" hidden></div>
+        <div class="sb-row">
+          <button class="sb-btn go" data-act="acc-submit" data-mode="${isSignin ? 'login' : 'register'}">${isSignin ? 'Sign in' : 'Create account'}</button>
+        </div>
+        <div class="sb-anyway"><a class="sb-link" data-act="${isSignin ? 'acc-yes' : 'acc-signin'}">${isSignin ? 'Create a new account instead' : 'Already have an account? Sign in'}</a></div>
+      </div>
+    `);
+    setTimeout(() => { const el = shadow.querySelector('#sb-email'); if (el) el.focus(); }, 50);
+  }
+
+  function submitAccountForm(isSignin) {
+    const emailEl = shadow.querySelector('#sb-email');
+    const passEl = shadow.querySelector('#sb-pass');
+    const errEl = shadow.querySelector('#sb-acc-err');
+    const btn = shadow.querySelector('[data-act="acc-submit"]');
+    const fail = (msg) => {
+      if (errEl) { errEl.textContent = msg; errEl.hidden = false; }
+      if (btn) { btn.disabled = false; btn.textContent = isSignin ? 'Sign in' : 'Create account'; }
+    };
+    const email = emailEl ? emailEl.value.trim() : '';
+    const password = passEl ? passEl.value : '';
+    if (!email || !password) { fail('Enter your email and password'); return; }
+    if (!isSignin && password.length < 8) { fail('Password must be at least 8 characters'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    chrome.runtime
+      .sendMessage({ type: isSignin ? 'sb:login' : 'sb:register', email, password })
+      .then((res) => {
+        if (!res || res.error) { fail((res && res.error) || 'Something went wrong'); return; }
+        account = { token: res.token, email: res.email };
+        renderAccountDone();
+      })
+      .catch(() => { fail('Could not reach Sus or Bus right now'); });
+  }
+
+  function renderAccountDone() {
+    renderCard(`
+      ${headHtml}
+      <div class="sb-body">
+        <div class="sb-acc-ok">You're in.</div>
+        <p class="sb-acc-note">Signed in as ${escapeHtml(account.email)}. Your safe-site and never-visit lists now sync between this extension and the Sus or Bus site.</p>
+      </div>
+      <div class="${takeover ? 'sb-take-actions' : 'sb-actions'}">
+        <button class="sb-btn go bus" data-act="gotit">Back to the check</button>
+      </div>
+    `);
+  }
+
+  function rerenderLast() {
+    if (!pendingUrl || !lastResult) { closePopup(); return; }
+    if (takeover) renderTakeoverResult(pendingUrl, lastResult);
+    else renderResult(pendingUrl, lastResult);
+  }
+
+  /* ---------- Blacklist (never-visit list) ---------- */
+
+  function renderBlacklisted(url) {
+    renderCard(`
+      ${headHtml}
+      <div class="sb-body">
+        <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
+        <div class="sb-verdict sus">STOP</div>
+        <div class="sb-valid sus">On your never-visit list</div>
+        <p class="sb-acc-note">You added this site to your blacklist to remind yourself never to visit it.</p>
+      </div>
+      <div class="sb-take-actions">
+        <button class="sb-btn go sus sus-sm" data-act="go">Proceed anyway</button>
+        <a class="sb-link" data-act="unblacklist">Remove from blacklist</a>
+      </div>
+    `);
+  }
+
+  function showBlacklisted(url, mode) {
+    pendingUrl = url;
+    pendingMode = mode;
+    pendingReportId = null;
+    takeover = true;
+    renderBlacklisted(url);
+  }
+
+  function blacklistSite(url) {
+    let origin = '';
+    try { origin = new URL(url).origin; } catch {}
+    if (origin) {
+      blacklist.add(origin);
+      chrome.runtime.sendMessage({ type: 'sb:blacklist', url }).catch(() => {});
+    }
+    if (takeover) renderBlacklisted(url);
+    else renderBlacklistedAdded(url);
+  }
+
+  function renderBlacklistedAdded(url) {
+    renderCard(`
+      ${headHtml}
+      <div class="sb-body">
+        <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
+        <div class="sb-acc-ok">Added to your never-visit list.</div>
+        <p class="sb-acc-note">Sus or Bus will stop you with a warning before opening this site again.</p>
+      </div>
+      <div class="sb-actions">
+        <button class="sb-btn" data-act="cancel">Cancel</button>
+        <button class="sb-btn go" data-act="go">Continue anyway</button>
+      </div>
+    `);
+  }
+
+  function unblacklistSite(url) {
+    let origin = '';
+    try { origin = new URL(url).origin; } catch {}
+    if (origin) {
+      blacklist.delete(origin);
+      chrome.runtime.sendMessage({ type: 'sb:unblacklist', url }).catch(() => {});
+    }
+    closePopup();
+  }
+
   function closePopup() {
     if (host) host.remove();
     host = null;
@@ -435,6 +640,12 @@
       if (!/^https?:$/.test(url.protocol)) return;
       if (url.origin === HERE) return; // same-site links pass through
       if (isGoogleSearch(url.href)) return; // Google Search pages are never checked
+      if (blacklist.has(url.origin)) {
+        e.preventDefault();
+        e.stopPropagation();
+        showBlacklisted(url.href, a.target === '_blank' ? 'blank' : 'same');
+        return;
+      }
       if (whitelist.has(url.origin)) return; // user whitelisted this site — pass through
       e.preventDefault();
       e.stopPropagation();
@@ -465,6 +676,10 @@
     } catch {}
     if (navType === 'reload' || navType === 'back_forward' || navType === 'prerender') return;
     if (isGoogleSearch(location.href)) return; // Google Search pages are never checked
+    if (blacklist.has(location.origin)) {
+      showBlacklisted(location.href, 'same');
+      return;
+    }
     if (whitelist.has(location.origin)) return; // user whitelisted this site — no takeover
     let refOrigin = '';
     try {

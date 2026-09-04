@@ -16,6 +16,7 @@ const Privacy = lazy(() => import('@/pages/Privacy'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Faq = lazy(() => import('@/pages/Faq'));
 const Extension = lazy(() => import('@/pages/Extension'));
+const Account = lazy(() => import('@/pages/Account'));
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
 
@@ -65,6 +66,7 @@ const AnimatedRoutes = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/FAQ" element={<Faq />} />
             <Route path="/extension" element={<Extension />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/" element={<Home />} />
             <Route path="/report/:id" element={<Report />} />
             <Route path="*" element={<PageNotFound />} />

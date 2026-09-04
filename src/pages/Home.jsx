@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { setPendingReport, getAnalyzeError, clearAnalyzeError } from '@/lib/pendingReport';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Globe, Code2, FileText, FileUp, Mail, ShieldAlert, Sparkles, Settings } from 'lucide-react';
+import { Loader2, Globe, Code2, FileText, FileUp, Mail, ShieldAlert, Sparkles, Settings, UserPlus } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import PullToRefresh from '@/components/susbus/PullToRefresh';
@@ -106,6 +106,13 @@ export default function Home() {
         <div className="flex items-center justify-between gap-3 mb-10">
           <LanguageSwitcher />
           <div className="flex items-center gap-2">
+            <Link
+              to="/account"
+              className="inline-flex items-center gap-1.5 min-h-11 px-3 rounded-lg border border-border bg-card/60 backdrop-blur text-xs text-foreground hover:bg-secondary/70 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span className="font-mono">{localStorage.getItem('sb_account') ? 'Account' : 'Create an account'}</span>
+            </Link>
             <Link
               to="/settings"
               aria-label="Settings"
