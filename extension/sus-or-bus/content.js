@@ -168,6 +168,52 @@
     });
   }
 
+  /* ---------- Live scan feedback ----------
+     A scan can take a while. While we wait, show progress stages, and hold a
+     port open so the background worker isn't killed mid-scan (which would
+     leave this popup loading forever). The port closes when the result
+     arrives — even if the user moved on, so the result still gets cached. */
+  const SCAN_STAGES = ['Fetching the site…', 'Analyzing content…', 'Finalizing the verdict…'];
+  let waitPort = null;
+  let stageTimer = null;
+
+  function openWaitPort() {
+    if (!waitPort) {
+      try {
+        waitPort = chrome.runtime.connect({ name: 'sb-wait' });
+      } catch {
+        waitPort = null;
+      }
+    }
+  }
+
+  function closeWaitPort() {
+    if (waitPort) {
+      try {
+        waitPort.disconnect();
+      } catch {}
+      waitPort = null;
+    }
+  }
+
+  function startStages() {
+    stopStages();
+    let i = 0;
+    stageTimer = setInterval(() => {
+      const el = shadow && shadow.querySelector('#sb-status');
+      if (!el) return;
+      i = Math.min(i + 1, SCAN_STAGES.length - 1);
+      el.textContent = SCAN_STAGES[i];
+    }, 6000);
+  }
+
+  function stopStages() {
+    if (stageTimer) {
+      clearInterval(stageTimer);
+      stageTimer = null;
+    }
+  }
+
   function ensurePopup() {
     if (host) return;
     host = document.createElement('div');
@@ -215,6 +261,7 @@
   }
 
   function renderCard(bodyHtml) {
+    stopStages();
     ensurePopup();
     const old = shadow.querySelector('.sb-take') || shadow.querySelector('.sb-card');
     if (old) old.remove();
@@ -275,10 +322,11 @@
       ${headHtml}
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
-        <div class="sb-scan"><span class="sb-spin"></span><span>Checking this site…</span></div>
+        <div class="sb-scan"><span class="sb-spin"></span><span id="sb-status">Checking this site…</span></div>
         <div class="sb-anyway"><a class="sb-link" data-act="go">Open without waiting</a></div>
       </div>
     `);
+    startStages();
     chrome.runtime
       .sendMessage({ type: 'sb:check', url })
       .then((res) => {
@@ -286,7 +334,7 @@
         if (res && res.status === 'hit') renderResult(url, res.data);
         else if (res && res.status === 'error') renderError(url, res.message);
         else if (res && res.status === 'pass') proceed(); // whitelisted — go without asking
-        // 'scanning' -> waiting for sb:update
+        else if (res && res.status === 'scanning') openWaitPort(); // keep the worker alive while we wait
       })
       .catch(() => {
         if (url === pendingUrl) renderError(url);
@@ -332,10 +380,12 @@
       ${headHtml}
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
-        <div class="sb-scan"><span class="sb-spin"></span><span>Checking this site before you browse it…</span></div>
+        <div class="sb-scan"><span class="sb-spin"></span><span id="sb-status">Checking this site before you browse it…</span></div>
         <div class="sb-anyway"><a class="sb-link" data-act="dismiss">Open without waiting</a></div>
       </div>
     `);
+    startStages();
+    openWaitPort();
   }
 
   function renderTakeoverResult(url, d) {
@@ -581,6 +631,7 @@
   }
 
   function closePopup() {
+    stopStages();
     if (host) host.remove();
     host = null;
     shadow = null;
@@ -591,7 +642,9 @@
 
   // Background pushes the finished scan result into an open popup
   chrome.runtime.onMessage.addListener((msg) => {
-    if (!msg || msg.type !== 'sb:update' || msg.url !== pendingUrl) return;
+    if (!msg || msg.type !== 'sb:update') return;
+    closeWaitPort(); // scan finished — the background worker can idle again
+    if (msg.url !== pendingUrl) return;
     if (msg.status === 'hit') {
       if (takeover) renderTakeoverResult(pendingUrl, msg.data);
       else renderResult(pendingUrl, msg.data);

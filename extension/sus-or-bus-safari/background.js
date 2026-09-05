@@ -310,6 +310,13 @@ async function handleAlternatives(url) {
   return { alternatives: data.alternatives || [] };
 }
 
+// While a tab is watching a scan, its content script holds a port open — that
+// keeps this service worker alive so a slow scan can still finish and deliver
+// its result instead of dying silently (which left popups loading forever).
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === 'sb-wait') return; // just holding the connection open
+});
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;
   if (msg.type === 'sb:check') {
