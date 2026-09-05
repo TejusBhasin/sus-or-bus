@@ -10,7 +10,6 @@
   window.__susbusContent = true;
 
   const REPORT_BASE = 'https://susbus.base44.app/report/';
-  const APP_ORIGIN = 'https://susbus.base44.app';
   const HERE = location.origin;
 
   let host = null;
@@ -111,9 +110,6 @@
     .sb-input:focus { outline: none; border-color: #818cf8; }
     .sb-err { color: #f87171; font-size: 12px; margin-top: 6px; }
     .sb-acc-ok { color: #34d399; font-size: 13px; font-weight: 600; }
-    .sb-corner-signin { display: flex; justify-content: flex-end; margin-top: 12px; }
-    .sb-signin-btn { border: 1px solid rgba(148,163,184,0.3); background: rgba(148,163,184,0.08); color: #cbd5e1; border-radius: 999px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .sb-signin-btn:hover { background: rgba(148,163,184,0.18); color: #e2e8f0; }
   `;
 
   function escapeHtml(s) {
@@ -145,17 +141,20 @@
   }
 
   // Sites the user marked "Don't ask again" (whitelist), sites they blacklisted
-  // to never visit, and the optional account session — kept in sync with storage.
+  // to never visit, the optional account session, and whether the one-time
+  // account question was already asked — all kept in sync with storage.
   let whitelist = new Set();
   let blacklist = new Set();
   let account = { token: '', email: '' };
+  let asked = false;
   let lastResult = null;
   chrome.storage.local
-    .get(['sb_whitelist', 'sb_blacklist', 'sb_token', 'sb_email'])
+    .get(['sb_whitelist', 'sb_blacklist', 'sb_token', 'sb_email', 'sb_asked'])
     .then((s) => {
       whitelist = new Set(s.sb_whitelist || []);
       blacklist = new Set(s.sb_blacklist || []);
       if (s.sb_token) account = { token: s.sb_token, email: s.sb_email || '' };
+      asked = !!s.sb_asked;
     })
     .catch(() => {});
   if (chrome.storage.onChanged) {
@@ -165,53 +164,8 @@
       if (changes.sb_blacklist) blacklist = new Set(changes.sb_blacklist.newValue || []);
       if (changes.sb_token) account = { token: changes.sb_token.newValue || '', email: account.email };
       if (changes.sb_email) account = { token: account.token, email: changes.sb_email.newValue || '' };
+      if (changes.sb_asked) asked = !!changes.sb_asked.newValue;
     });
-  }
-
-  /* ---------- Live scan feedback ----------
-     A scan can take a while. While we wait, show progress stages, and hold a
-     port open so the background worker isn't killed mid-scan (which would
-     leave this popup loading forever). The port closes when the result
-     arrives — even if the user moved on, so the result still gets cached. */
-  const SCAN_STAGES = ['Fetching the site…', 'Analyzing content…', 'Finalizing the verdict…'];
-  let waitPort = null;
-  let stageTimer = null;
-
-  function openWaitPort() {
-    if (!waitPort) {
-      try {
-        waitPort = chrome.runtime.connect({ name: 'sb-wait' });
-      } catch {
-        waitPort = null;
-      }
-    }
-  }
-
-  function closeWaitPort() {
-    if (waitPort) {
-      try {
-        waitPort.disconnect();
-      } catch {}
-      waitPort = null;
-    }
-  }
-
-  function startStages() {
-    stopStages();
-    let i = 0;
-    stageTimer = setInterval(() => {
-      const el = shadow && shadow.querySelector('#sb-status');
-      if (!el) return;
-      i = Math.min(i + 1, SCAN_STAGES.length - 1);
-      el.textContent = SCAN_STAGES[i];
-    }, 6000);
-  }
-
-  function stopStages() {
-    if (stageTimer) {
-      clearInterval(stageTimer);
-      stageTimer = null;
-    }
   }
 
   function ensurePopup() {
@@ -238,9 +192,11 @@
         blacklistSite(pendingUrl);
       } else if (act === 'unblacklist' && pendingUrl) {
         unblacklistSite(pendingUrl);
-      } else if (act === 'acc-corner') {
-        renderAccountForm(false);
+      } else if (act === 'acc-no') {
+        markAsked();
+        renderDeclined();
       } else if (act === 'acc-yes') {
+        markAsked();
         renderAccountForm(false);
       } else if (act === 'acc-signin') {
         renderAccountForm(true);
@@ -261,7 +217,6 @@
   }
 
   function renderCard(bodyHtml) {
-    stopStages();
     ensurePopup();
     const old = shadow.querySelector('.sb-take') || shadow.querySelector('.sb-card');
     if (old) old.remove();
@@ -308,7 +263,7 @@
       ${verdict === 'sus' ? '<a class="sb-link sb-report" data-act="alt">Find alternative websites →</a>' : ''}
       ${pendingReportId ? `<a class="sb-link sb-report" data-act="report">Full report →</a>` : ''}
       <div class="sb-anyway"><a class="sb-link" data-act="whitelist">Don\u2019t ask again for this site</a> · <a class="sb-link" data-act="blacklist">Add to blacklist — never visit</a></div>
-      ${signInCornerHtml()}
+      ${accountNudgeHtml()}
     `;
   }
 
@@ -322,11 +277,10 @@
       ${headHtml}
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
-        <div class="sb-scan"><span class="sb-spin"></span><span id="sb-status">Checking this site…</span></div>
+        <div class="sb-scan"><span class="sb-spin"></span><span>Checking this site…</span></div>
         <div class="sb-anyway"><a class="sb-link" data-act="go">Open without waiting</a></div>
       </div>
     `);
-    startStages();
     chrome.runtime
       .sendMessage({ type: 'sb:check', url })
       .then((res) => {
@@ -334,7 +288,7 @@
         if (res && res.status === 'hit') renderResult(url, res.data);
         else if (res && res.status === 'error') renderError(url, res.message);
         else if (res && res.status === 'pass') proceed(); // whitelisted — go without asking
-        else if (res && res.status === 'scanning') openWaitPort(); // keep the worker alive while we wait
+        // 'scanning' -> waiting for sb:update
       })
       .catch(() => {
         if (url === pendingUrl) renderError(url);
@@ -380,12 +334,10 @@
       ${headHtml}
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
-        <div class="sb-scan"><span class="sb-spin"></span><span id="sb-status">Checking this site before you browse it…</span></div>
+        <div class="sb-scan"><span class="sb-spin"></span><span>Checking this site before you browse it…</span></div>
         <div class="sb-anyway"><a class="sb-link" data-act="dismiss">Open without waiting</a></div>
       </div>
     `);
-    startStages();
-    openWaitPort();
   }
 
   function renderTakeoverResult(url, d) {
@@ -491,18 +443,39 @@
 
   /* ---------- Optional account ---------- */
 
-  // Always-present corner sign-in — shown in every popup whenever the user
-  // isn't signed in, so an account can be created or accessed at any time.
-  function signInCornerHtml() {
-    if (account.token) return '';
+  function markAsked() {
+    asked = true;
+    chrome.storage.local.set({ sb_asked: true }).catch(() => {});
+  }
+
+  // The one-time account question — shown inside the first result popup only.
+  function accountNudgeHtml() {
+    if (account.token || asked) return '';
     return `
-      <div class="sb-corner-signin">
-        <button class="sb-signin-btn" data-act="acc-corner">Sign up / Log in</button>
+      <div class="sb-acc">
+        <div class="sb-acc-q">Create a free account?</div>
+        <div class="sb-acc-note">Optional — checking sites always works without one. An account syncs your safe-site and never-visit lists between this extension and the Sus or Bus site.</div>
+        <div class="sb-row">
+          <button class="sb-btn go" data-act="acc-yes">Create account</button>
+          <button class="sb-btn" data-act="acc-no">No thanks</button>
+        </div>
       </div>
     `;
   }
 
+  function renderDeclined() {
+    renderCard(`
+      ${headHtml}
+      <div class="sb-body">
+        <div class="sb-url">${escapeHtml(shortUrl(pendingUrl))}</div>
+        <p class="sb-acc-note">No problem — checking sites always works without an account. If you change your mind later, you'll need to uninstall and reinstall the extension to create one.</p>
+        <button class="sb-btn go" data-act="gotit">Got it</button>
+      </div>
+    `);
+  }
+
   function renderAccountForm(isSignin) {
+    markAsked();
     renderCard(`
       ${headHtml}
       <div class="sb-body">
@@ -631,7 +604,6 @@
   }
 
   function closePopup() {
-    stopStages();
     if (host) host.remove();
     host = null;
     shadow = null;
@@ -642,9 +614,7 @@
 
   // Background pushes the finished scan result into an open popup
   chrome.runtime.onMessage.addListener((msg) => {
-    if (!msg || msg.type !== 'sb:update') return;
-    closeWaitPort(); // scan finished — the background worker can idle again
-    if (msg.url !== pendingUrl) return;
+    if (!msg || msg.type !== 'sb:update' || msg.url !== pendingUrl) return;
     if (msg.status === 'hit') {
       if (takeover) renderTakeoverResult(pendingUrl, msg.data);
       else renderResult(pendingUrl, msg.data);
@@ -692,34 +662,6 @@
     },
     true
   );
-
-  /* ---------- Snooze set from the website ----------
-     On the Sus or Bus site itself, the user can pause checks ("Don't check me")
-     for a while. The site announces it here; we mirror it so the background
-     worker honors it, and mirror changes back so both sides stay in sync. */
-  if (location.origin === APP_ORIGIN) {
-    let lastFromPage = null;
-    window.addEventListener('sb-snooze-update', (e) => {
-      const until = Math.max(0, Number((e.detail && e.detail.until) || 0));
-      lastFromPage = until;
-      chrome.storage.local.set({ sb_snooze_web_until: until }).catch(() => {});
-    });
-    if (chrome.storage.onChanged) {
-      chrome.storage.onChanged.addListener((changes, area) => {
-        if (area !== 'local' || !changes.sb_snooze_web_until) return;
-        if (changes.sb_snooze_web_until.newValue === lastFromPage) {
-          lastFromPage = null;
-          return; // our own echo of a page event
-        }
-        const until = changes.sb_snooze_web_until.newValue || 0;
-        try {
-          if (until > Date.now()) localStorage.setItem('sb_snooze_until', String(until));
-          else localStorage.removeItem('sb_snooze_until');
-        } catch {}
-        window.dispatchEvent(new CustomEvent('sb-snooze-update', { detail: { until } }));
-      });
-    }
-  }
 
   /* ---------- Direct-open gate ----------
      Ask the background worker whether this page load was a direct open

@@ -102,12 +102,6 @@ async function removeFromStorageList(key, origin) {
   await chrome.storage.local.set({ [key]: list });
 }
 
-// "Don't check me" snooze — the user can pause all safety checks for a while.
-async function isSnoozed() {
-  const store = await chrome.storage.local.get(['sb_snooze_until', 'sb_snooze_web_until']);
-  return Date.now() < Math.max(store.sb_snooze_until || 0, store.sb_snooze_web_until || 0);
-}
-
 // Push the device's lists to the user's account (when signed in) so the
 // extension and the Sus or Bus site stay in sync.
 async function syncAccountLists() {
@@ -215,7 +209,6 @@ function consumeAllow(origin) {
 async function handleCheck(url, sender) {
   const origin = originOf(url);
   if (!origin) return { status: 'pass' }; // not a checkable website — let it through
-  if (await isSnoozed()) return { status: 'pass' }; // checks are paused ("Don't check me")
   if (isGoogleSearch(url)) return { status: 'pass' }; // Google Search pages are never checked
   if (isTrusted(url)) return { status: 'pass' }; // well-known safe domain — no scan needed
   if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
@@ -246,7 +239,6 @@ async function handleGate(msg, sender) {
   const origin = originOf(msg.url);
   if (!origin) return { status: 'pass' };
   if (origin === APP_ORIGIN) return { status: 'pass' }; // never gate our own app
-  if (await isSnoozed()) return { status: 'pass' }; // checks are paused ("Don't check me")
   if (msg.navType === 'reload' || msg.navType === 'back_forward' || msg.navType === 'prerender') {
     return { status: 'pass' };
   }
@@ -309,13 +301,6 @@ async function handleAlternatives(url) {
   if (!resp.ok || !data || data.error) throw new Error((data && data.error) || 'Lookup failed');
   return { alternatives: data.alternatives || [] };
 }
-
-// While a tab is watching a scan, its content script holds a port open — that
-// keeps this service worker alive so a slow scan can still finish and deliver
-// its result instead of dying silently (which left popups loading forever).
-chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === 'sb-wait') return; // just holding the connection open
-});
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.type) return;
@@ -386,28 +371,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       })
       .catch(() => sendResponse({ error: 'Could not reach Sus or Bus right now' }));
     return true; // async response
-  }
-  if (msg.type === 'sb:snooze') {
-    const hours = Math.min(Math.max(Number(msg.hours) || 0.5, 0.5), 24);
-    const until = Date.now() + hours * 60 * 60 * 1000;
-    chrome.storage.local.set({ sb_snooze_until: until }).catch(() => {});
-    sendResponse({ status: 'ok', until });
-    return;
-  }
-  if (msg.type === 'sb:unsnooze') {
-    chrome.storage.local.remove(['sb_snooze_until', 'sb_snooze_web_until']).catch(() => {});
-    sendResponse({ status: 'ok' });
-    return;
-  }
-  if (msg.type === 'sb:logout') {
-    chrome.storage.local.remove(['sb_token', 'sb_email']).catch(() => {});
-    sendResponse({ status: 'ok' });
-    return;
-  }
-  if (msg.type === 'sb:sync') {
-    syncAccountLists().catch(() => {});
-    sendResponse({ status: 'ok' });
-    return;
   }
   if (msg.type === 'sb:allow') {
     const origin = originOf(msg.url);

@@ -138,9 +138,6 @@ Rules:
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
-      // URL scans power the extension's real-time checks — use the fast model
-      // so verdicts land in seconds instead of half a minute.
-      ...(inputType === 'url' ? { model: 'gemini_3_flash' } : {}),
       ...(inputType === 'document' ? { file_urls: [fileUrl] } : {}),
       response_json_schema: {
         type: 'object',

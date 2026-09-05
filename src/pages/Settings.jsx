@@ -7,7 +7,6 @@ import {
 import { Trash2, CheckCircle2 } from 'lucide-react';
 import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
-import SnoozeTimer from '@/components/susbus/SnoozeTimer';
 
 export default function Settings() {
   const [localCleared, setLocalCleared] = useState(false);
@@ -62,8 +61,6 @@ export default function Settings() {
             </AlertDialog>
           )}
         </div>
-
-        <SnoozeTimer />
 
         <Footer />
       </div>
