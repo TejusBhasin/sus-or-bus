@@ -110,6 +110,9 @@
     .sb-input:focus { outline: none; border-color: #818cf8; }
     .sb-err { color: #f87171; font-size: 12px; margin-top: 6px; }
     .sb-acc-ok { color: #34d399; font-size: 13px; font-weight: 600; }
+    .sb-corner-signin { display: flex; justify-content: flex-end; margin-top: 12px; }
+    .sb-signin-btn { border: 1px solid rgba(148,163,184,0.3); background: rgba(148,163,184,0.08); color: #cbd5e1; border-radius: 999px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .sb-signin-btn:hover { background: rgba(148,163,184,0.18); color: #e2e8f0; }
   `;
 
   function escapeHtml(s) {
@@ -141,20 +144,17 @@
   }
 
   // Sites the user marked "Don't ask again" (whitelist), sites they blacklisted
-  // to never visit, the optional account session, and whether the one-time
-  // account question was already asked — all kept in sync with storage.
+  // to never visit, and the optional account session — kept in sync with storage.
   let whitelist = new Set();
   let blacklist = new Set();
   let account = { token: '', email: '' };
-  let asked = false;
   let lastResult = null;
   chrome.storage.local
-    .get(['sb_whitelist', 'sb_blacklist', 'sb_token', 'sb_email', 'sb_asked'])
+    .get(['sb_whitelist', 'sb_blacklist', 'sb_token', 'sb_email'])
     .then((s) => {
       whitelist = new Set(s.sb_whitelist || []);
       blacklist = new Set(s.sb_blacklist || []);
       if (s.sb_token) account = { token: s.sb_token, email: s.sb_email || '' };
-      asked = !!s.sb_asked;
     })
     .catch(() => {});
   if (chrome.storage.onChanged) {
@@ -164,7 +164,6 @@
       if (changes.sb_blacklist) blacklist = new Set(changes.sb_blacklist.newValue || []);
       if (changes.sb_token) account = { token: changes.sb_token.newValue || '', email: account.email };
       if (changes.sb_email) account = { token: account.token, email: changes.sb_email.newValue || '' };
-      if (changes.sb_asked) asked = !!changes.sb_asked.newValue;
     });
   }
 
@@ -192,11 +191,9 @@
         blacklistSite(pendingUrl);
       } else if (act === 'unblacklist' && pendingUrl) {
         unblacklistSite(pendingUrl);
-      } else if (act === 'acc-no') {
-        markAsked();
-        renderDeclined();
+      } else if (act === 'acc-corner') {
+        renderAccountForm(false);
       } else if (act === 'acc-yes') {
-        markAsked();
         renderAccountForm(false);
       } else if (act === 'acc-signin') {
         renderAccountForm(true);
@@ -263,7 +260,7 @@
       ${verdict === 'sus' ? '<a class="sb-link sb-report" data-act="alt">Find alternative websites →</a>' : ''}
       ${pendingReportId ? `<a class="sb-link sb-report" data-act="report">Full report →</a>` : ''}
       <div class="sb-anyway"><a class="sb-link" data-act="whitelist">Don\u2019t ask again for this site</a> · <a class="sb-link" data-act="blacklist">Add to blacklist — never visit</a></div>
-      ${accountNudgeHtml()}
+      ${signInCornerHtml()}
     `;
   }
 
@@ -443,39 +440,18 @@
 
   /* ---------- Optional account ---------- */
 
-  function markAsked() {
-    asked = true;
-    chrome.storage.local.set({ sb_asked: true }).catch(() => {});
-  }
-
-  // The one-time account question — shown inside the first result popup only.
-  function accountNudgeHtml() {
-    if (account.token || asked) return '';
+  // Always-present corner sign-in — shown in every popup whenever the user
+  // isn't signed in, so an account can be created or accessed at any time.
+  function signInCornerHtml() {
+    if (account.token) return '';
     return `
-      <div class="sb-acc">
-        <div class="sb-acc-q">Create a free account?</div>
-        <div class="sb-acc-note">Optional — checking sites always works without one. An account syncs your safe-site and never-visit lists between this extension and the Sus or Bus site.</div>
-        <div class="sb-row">
-          <button class="sb-btn go" data-act="acc-yes">Create account</button>
-          <button class="sb-btn" data-act="acc-no">No thanks</button>
-        </div>
+      <div class="sb-corner-signin">
+        <button class="sb-signin-btn" data-act="acc-corner">Sign up / Log in</button>
       </div>
     `;
   }
 
-  function renderDeclined() {
-    renderCard(`
-      ${headHtml}
-      <div class="sb-body">
-        <div class="sb-url">${escapeHtml(shortUrl(pendingUrl))}</div>
-        <p class="sb-acc-note">No problem — checking sites always works without an account. If you change your mind later, you'll need to uninstall and reinstall the extension to create one.</p>
-        <button class="sb-btn go" data-act="gotit">Got it</button>
-      </div>
-    `);
-  }
-
   function renderAccountForm(isSignin) {
-    markAsked();
     renderCard(`
       ${headHtml}
       <div class="sb-body">
