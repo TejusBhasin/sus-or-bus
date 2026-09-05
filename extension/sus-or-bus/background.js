@@ -104,8 +104,8 @@ async function removeFromStorageList(key, origin) {
 
 // "Don't check me" snooze — the user can pause all safety checks for a while.
 async function isSnoozed() {
-  const store = await chrome.storage.local.get('sb_snooze_until');
-  return Date.now() < (store.sb_snooze_until || 0);
+  const store = await chrome.storage.local.get(['sb_snooze_until', 'sb_snooze_web_until']);
+  return Date.now() < Math.max(store.sb_snooze_until || 0, store.sb_snooze_web_until || 0);
 }
 
 // Push the device's lists to the user's account (when signed in) so the
@@ -388,7 +388,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
   if (msg.type === 'sb:unsnooze') {
-    chrome.storage.local.remove('sb_snooze_until').catch(() => {});
+    chrome.storage.local.remove(['sb_snooze_until', 'sb_snooze_web_until']).catch(() => {});
     sendResponse({ status: 'ok' });
     return;
   }

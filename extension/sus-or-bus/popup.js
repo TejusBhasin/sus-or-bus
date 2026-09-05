@@ -36,7 +36,7 @@ function remaining(ms) {
 
 async function loadState() {
   const s = await chrome.storage.local.get([
-    'sb_cache', 'sb_whitelist', 'sb_blacklist', 'sb_token', 'sb_email', 'sb_snooze_until'
+    'sb_cache', 'sb_whitelist', 'sb_blacklist', 'sb_token', 'sb_email', 'sb_snooze_until', 'sb_snooze_web_until'
   ]);
   state = {
     cache: s.sb_cache || {},
@@ -44,7 +44,7 @@ async function loadState() {
     blacklist: s.sb_blacklist || [],
     token: s.sb_token || '',
     email: s.sb_email || '',
-    snoozeUntil: s.sb_snooze_until || 0
+    snoozeUntil: Math.max(s.sb_snooze_until || 0, s.sb_snooze_web_until || 0)
   };
 }
 

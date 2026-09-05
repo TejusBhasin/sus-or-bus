@@ -10,6 +10,7 @@
   window.__susbusContent = true;
 
   const REPORT_BASE = 'https://susbus.base44.app/report/';
+  const APP_ORIGIN = 'https://susbus.base44.app';
   const HERE = location.origin;
 
   let host = null;
@@ -638,6 +639,34 @@
     },
     true
   );
+
+  /* ---------- Snooze set from the website ----------
+     On the Sus or Bus site itself, the user can pause checks ("Don't check me")
+     for a while. The site announces it here; we mirror it so the background
+     worker honors it, and mirror changes back so both sides stay in sync. */
+  if (location.origin === APP_ORIGIN) {
+    let lastFromPage = null;
+    window.addEventListener('sb-snooze-update', (e) => {
+      const until = Math.max(0, Number((e.detail && e.detail.until) || 0));
+      lastFromPage = until;
+      chrome.storage.local.set({ sb_snooze_web_until: until }).catch(() => {});
+    });
+    if (chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== 'local' || !changes.sb_snooze_web_until) return;
+        if (changes.sb_snooze_web_until.newValue === lastFromPage) {
+          lastFromPage = null;
+          return; // our own echo of a page event
+        }
+        const until = changes.sb_snooze_web_until.newValue || 0;
+        try {
+          if (until > Date.now()) localStorage.setItem('sb_snooze_until', String(until));
+          else localStorage.removeItem('sb_snooze_until');
+        } catch {}
+        window.dispatchEvent(new CustomEvent('sb-snooze-update', { detail: { until } }));
+      });
+    }
+  }
 
   /* ---------- Direct-open gate ----------
      Ask the background worker whether this page load was a direct open
