@@ -2,33 +2,23 @@
 
 ## Project Context
 
-This is a Base44 app repository. Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
+This is the **Sus or Bus** app repository — a web-safety verification platform (React + Vite frontend, serverless backend, browser extensions). Treat it as user-owned application code, keep changes focused on the user's request, and preserve existing project conventions.
 
-Start with `README.md` for local setup, environment variables, and publish workflow.
-
-## Base44 References
-
-- CLI overview: https://docs.base44.com/developers/references/cli/get-started/overview.md
-- Agent skills: https://docs.base44.com/developers/backend/overview/skills.md
-
-If your agent supports Agent Skills, install or update Base44 skills before Base44-specific work:
-
-```bash
-npx skills add base44/skills
-```
+Start with `README.md` for project overview and structure.
 
 ## Key Files
 
 - `src/`: frontend application source.
-- `src/api/base44Client.js`: frontend Base44 SDK client.
-- `vite.config.js`: Vite config and Base44 Vite plugin setup.
+- `src/api/`: SDK client initialization.
+- `vite.config.js`: Vite config and build plugin setup.
+- `base44/`: backend — entities (data schemas), functions (API logic), shared modules.
+- `extension/`: Chrome and Safari browser extension source.
 - `.env.local`: local-only environment values; never commit secrets.
 
 ## Working Notes
 
-- Use `base44 dev` as the default local development command when you need the local Base44 backend. It can run the backend and frontend together.
-- When docs or code mention the frontend being started automatically, that usually means the Base44 project config includes `site.serveCommand`, for example `"serveCommand": "npm run dev"` in `base44/config.jsonc`.
-- Use `npm run dev` only for frontend-only work against the hosted Base44 backend.
-- Prefer the existing Base44 CLI workflow over adding new npm scripts for Base44-specific tasks.
-- Reuse the existing SDK client and Vite plugin patterns before adding new Base44 integration paths.
-- Run the relevant checks from `package.json` before finishing code changes.
+- Reuse the existing SDK client and build plugin patterns before adding new integration paths.
+- Prefer the existing workflow over adding new npm scripts for backend-specific tasks.
+- Run `npm run lint` and `npm run typecheck` from `package.json` before finishing code changes.
+- Frontend uses Tailwind CSS tokens (`src/index.css` + `tailwind.config.js`) — never hardcode colors or fonts.
+- All UI copy goes through the i18n system (`src/lib/i18n.jsx`), which supports 16 languages.

@@ -1,62 +1,70 @@
+# Sus or Bus
 
+**Is it bussin, or is it sus?**
 
-Use this repository to run and edit the app locally, then publish changes back through Base44.
+Sus or Bus is a web-safety verification platform that analyzes links, emails, code, and text for potential threats and gives you a simple, honest verdict: **BUS** (safe, legit, bussin) or **SUS** (suspicious, sketchy, unsafe).
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+## What it does
 
-## Prerequisites
+Paste in any of these and get an instant safety report:
 
-1. Clone the repository using the project's Git URL.
-2. Navigate to the project directory.
-3. Install dependencies: `npm install`.
-4. Install the Base44 CLI: `npm install -g base44@latest`.
-5. Install [Deno](https://docs.deno.com/runtime/getting_started/installation/) — the local Base44 backend runs on it.
+- 🔗 **Links** — live site analysis with a safety score, trackers, data collection, and red/green flags
+- 🧬 **HTML & code** — static analysis of source code for malicious patterns
+- 📧 **Emails** — phishing, spoofing, and social-engineering detection
+- 📝 **Text** — scam pattern and misleading-content checks
+- 📄 **Documents** — uploaded files checked for suspicious links, payment requests, and scam instructions
 
-Run `base44 --help` (or see the [CLI reference](https://docs.base44.com/developers/references/cli/commands/introduction)) for the full command surface.
+Every report includes:
 
-## Run Locally
+- A **0–100 safety score** with a binary BUS/SUS verdict
+- **Two explanations per finding** — plain language for everyone ("simple" mode) and technical detail for security-savvy users ("nerd" mode)
+- Trackers, data-collection practices, and detected technologies
+- Source-code viewer for analyzed HTML/code
+- **Safer alternatives** — 3–5 reputable alternatives suggested when a site is rated SUS
+- Shareable report links, PDF export, and one-click re-scan
 
-Three commands, from the project root:
+Smart efficiency features keep it fast and cheap:
 
-```bash
-base44 login   # one-time per machine
-base44 link    # one-time per clone
-base44 dev     # local backend + frontend together
+- **7-day shared report cache** — recently scanned URLs return instantly
+- **Trusted-domain bypass** — well-known safe domains skip scanning entirely
+- **30-day alternatives cache** — safer-alternative lookups are cached per site
+
+## Browser extension
+
+The Sus or Bus browser extension brings real-time protection to your browsing:
+
+- Intercepts risky link clicks and scans them before you land
+- Full-screen takeover on direct navigation to flagged sites
+- "Don't ask again" whitelisting for sites you trust
+- Optional account to sync your whitelist/blacklist across devices
+- Available for **Chrome** and **Safari** (see the in-app Extension page for install instructions)
+
+## Tech stack
+
+- **Frontend:** React 18, Vite, Tailwind CSS, shadcn/ui, lucide-react
+- **Backend:** serverless functions for content analysis and account sync
+- **AI:** LLM-powered analysis with structured, dual-audience output
+- **i18n:** 16 languages, light/dark themes, mobile-first design
+
+## Project structure
+
+```
+src/
+  pages/          # App screens (Home, Report, Settings, Account, FAQ, legal pages)
+  components/
+    susbus/       # Feature components (verdicts, score gauge, lists, etc.)
+    ui/           # shadcn/ui primitives
+  lib/            # i18n, theming, auth, utilities
+base44/           # Backend: entities, functions, config
+extension/
+  sus-or-bus/          # Chrome extension (Manifest V3)
+  sus-or-bus-safari/   # Safari variant
 ```
 
-Open the frontend URL that `base44 dev` prints (typically `http://localhost:5173`).
+## Getting involved
 
-Notes:
+Found a bug or a site that gets the wrong verdict? Open an issue or reach out at [support@susorbus.com](mailto:support@susorbus.com).
 
-- **Every fresh clone needs `base44 link`.** It writes `base44/.app.jsonc` (the app-id pointer), which is deliberately gitignored. Your app id is in the Builder URL (`app.base44.com/apps/<id>/...`); `base44 link --help` shows the non-interactive flags.
-- **`base44 dev` runs the frontend for you** (via `site.serveCommand` in this repo's `base44/config.jsonc`) — never run `npm run dev` yourself: alone it serves a UI with no backend behind it (`[base44] Proxy not enabled`, every `/api` call fails), and alongside `base44 dev` the second Vite silently takes the next port and you end up looking at the wrong one.
-- **The app must be published at least once for the UI to load under `base44 dev`.** The frontend boots by fetching app settings from the hosted app; before the first publish that fails and every page redirects to login. The local API works regardless.
-- Entities, functions, and auth run locally — entity data is **in-memory only**, wiped when `base44 dev` restarts. Everything else (Core integrations, OAuth login) is forwarded to your deployed app. Full breakdown: [Local development overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview).
+## License
 
-## Frontend Only, Hosted Backend
-
-To work on just the frontend against your app's live hosted backend:
-
-```bash
-base44 dev --remote
-```
-
-⚠️ In this mode writes go to your app's **production data** — plain `base44 dev` keeps everything local.
-
-## Publish Your Changes
-
-After pushing your changes to git, open the Base44 dashboard and publish the app:
-
-```bash
-base44 dashboard open
-```
-
-This repo syncs to Base44 through git, so publish from the dashboard rather than `base44 deploy` — a CLI deploy ships your local tree directly, bypassing the sync, and the deployed state silently diverges from the repo.
-
-## Docs & Support
-
-GitHub integration: [https://docs.base44.com/developers/app-code/local-development/github](https://docs.base44.com/developers/app-code/local-development/github)
-
-Local development: [https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview](https://docs.base44.com/developers/backend/overview/local-dev/local-development-overview)
-
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+All rights reserved © Sus or Bus
