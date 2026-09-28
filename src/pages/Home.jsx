@@ -11,6 +11,7 @@ import ThemeToggle from '@/components/susbus/ThemeToggle';
 import PullToRefresh from '@/components/susbus/PullToRefresh';
 import DocumentUpload from '@/components/susbus/DocumentUpload';
 import Footer from '@/components/susbus/Footer';
+import MaintenanceBanner from '@/components/susbus/MaintenanceBanner';
 import { useLanguage } from '@/lib/i18n';
 
 const inputTypes = [
@@ -123,6 +124,8 @@ export default function Home() {
             <ThemeToggle />
           </div>
         </div>
+
+        <MaintenanceBanner />
 
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground mb-5">
