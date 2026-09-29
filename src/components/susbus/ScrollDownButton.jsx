@@ -30,7 +30,7 @@ export default function ScrollDownButton() {
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
       )}
     >
-      <ChevronDown className="w-4 h-4 animate-bounce" />
+      <ChevronDown className="w-4 h-4" />
     </button>
   );
 }

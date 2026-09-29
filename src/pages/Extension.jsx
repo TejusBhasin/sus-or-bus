@@ -54,6 +54,18 @@ export default function Extension() {
     <div className="min-h-screen bg-background text-foreground">
       <TopNav />
       <div className="max-w-2xl mx-auto px-5 py-12 pb-safe">
+        {/* Top-left jump link: skips down to the phone app section */}
+        <a
+          href="#the-app"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById('the-app').scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="mb-6 inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowDown className="w-3.5 h-3.5" />
+          See the app
+        </a>
         <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground mb-3">
           <Puzzle className="w-4 h-4" />
           browser extension
@@ -84,7 +96,7 @@ export default function Extension() {
             href="https://chromewebstore.google.com/detail/jalmnkkkalmomjjkgdpaebfohonfaddm"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl border border-border bg-secondary/60 text-foreground font-semibold text-base hover:bg-secondary transition-colors"
+            className="mt-5 flex mx-auto items-center justify-center gap-2 min-h-12 px-6 rounded-xl border border-border bg-secondary/60 text-foreground font-semibold text-base hover:bg-secondary transition-colors"
           >
             <Chrome className="w-4 h-4" />
             Get it on the Chrome Web Store
@@ -111,19 +123,6 @@ export default function Extension() {
             safety engine as this app, so the rating you see in the popup is the same analysis you
             get here — with the full report one tap away.
           </p>
-          <div className="mt-6 text-center">
-            <a
-              href="#the-app"
-              onClick={(e) => {
-                e.preventDefault();
-                document.getElementById('the-app').scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
-            >
-              See the app
-              <ArrowDown className="w-4 h-4" />
-            </a>
-          </div>
         </section>
 
         {/* How it works */}

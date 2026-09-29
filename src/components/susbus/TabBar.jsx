@@ -5,8 +5,8 @@ import { useLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const tabs = [
-  { path: '/', labelKey: 'nav_home', icon: HomeIcon, isActive: (p) => p === '/' || p.startsWith('/report') },
   { path: '/extension', label: 'Extension/App', icon: Puzzle, isActive: (p) => p.startsWith('/extension') },
+  { path: '/', labelKey: 'nav_home', icon: HomeIcon, isActive: (p) => p === '/' || p.startsWith('/report') },
   { path: '/settings', labelKey: 'nav_settings', icon: SettingsIcon, isActive: (p) => p.startsWith('/settings') }
 ];
 
