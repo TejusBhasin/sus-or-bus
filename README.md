@@ -63,7 +63,7 @@ extension/
 
 ## Getting involved
 
-Found a bug or a site that gets the wrong verdict? Open an issue or reach out at [support@susorbus.com](mailto:support@susorbus.com).
+Found a bug or a site that gets the wrong verdict? Open an issue or reach out at [tejusbhasin17@gmail.com](mailto:tejusbhasin17@gmail.com).
 
 ## License
 
