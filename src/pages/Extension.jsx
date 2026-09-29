@@ -1,5 +1,5 @@
 import React from 'react';
-import { Chrome, Download, MousePointerClick, Zap, ListChecks, CheckCircle2, Puzzle, ShieldAlert, Maximize2, ShieldCheck, Compass } from 'lucide-react';
+import { Chrome, Download, MousePointerClick, Zap, ListChecks, CheckCircle2, Puzzle, ShieldAlert, Maximize2, ShieldCheck, Compass, Smartphone } from 'lucide-react';
 import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
 
@@ -46,7 +46,7 @@ const notes = [
   'Google Search pages (www.google.com/search) are never checked — Sus or Bus stays out of the way there.',
   'See "Don\u2019t ask again for this site" on any popup to whitelist a website — it will never be checked again.',
   'An account is optional and never required for checking. Create one from the first popup to sync your safe-site and never-visit lists with this website.',
-  'A Chrome Web Store version is coming — the unpacked install takes under a minute.'
+  'Also on the Chrome Web Store — but updates reach this site 3–5 business days sooner, since every new version waits in Google\u2019s approval queue.'
 ];
 
 export default function Extension() {
@@ -80,6 +80,19 @@ export default function Extension() {
             <Download className="w-4 h-4" />
             Download the extension
           </a>
+          <a
+            href="https://chromewebstore.google.com/detail/jalmnkkkalmomjjkgdpaebfohonfaddm"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl border border-border bg-secondary/60 text-foreground font-semibold text-base hover:bg-secondary transition-colors"
+          >
+            <Chrome className="w-4 h-4" />
+            Get it on the Chrome Web Store
+          </a>
+          <p className="mt-3 text-xs text-muted-foreground font-mono leading-relaxed max-w-md mx-auto">
+            New pushes and updates land here on the site 3–5 business days sooner than on the store —
+            every version has to sit in Google's approval queue first.
+          </p>
           <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus.zip · v1.3.1 · free</p>
         </div>
 
@@ -190,6 +203,29 @@ export default function Extension() {
               </li>
             ))}
           </ol>
+        </section>
+
+        {/* iOS app */}
+        <section className="mt-12">
+          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground mb-4">
+            <Smartphone className="w-4 h-4" />
+            on your phone
+          </div>
+          <div className="rounded-2xl border border-border bg-card/60 backdrop-blur p-6 text-center">
+            <Smartphone className="w-8 h-8 mx-auto text-muted-foreground" />
+            <p className="mt-3 text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
+              Sus or Bus also runs as an iOS app — check links on the go, right from your phone.
+            </p>
+            <a
+              href="https://apps.apple.com/nz/app/sus-or-bus/id6808757038"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:bg-primary/90 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download on the App Store
+            </a>
+          </div>
         </section>
 
         <Footer />

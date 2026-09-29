@@ -12,6 +12,7 @@ import PullToRefresh from '@/components/susbus/PullToRefresh';
 import DocumentUpload from '@/components/susbus/DocumentUpload';
 import Footer from '@/components/susbus/Footer';
 import MaintenanceBanner from '@/components/susbus/MaintenanceBanner';
+import HomeSections from '@/components/susbus/HomeSections';
 import { useLanguage } from '@/lib/i18n';
 
 const inputTypes = [
@@ -204,6 +205,7 @@ export default function Home() {
       </PullToRefresh>
 
       <div className="relative max-w-2xl mx-auto px-5 w-full pb-safe">
+        <HomeSections />
         <Footer />
       </div>
     </div>
