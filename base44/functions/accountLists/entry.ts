@@ -3,10 +3,9 @@ import { findAccountByToken, sanitizeList } from '../../shared/accountAuth.ts';
 
 // Sync rules for the account lists.
 //
-// The browser extension (whose code we cannot change) sends its FULL local
-// lists on every push. If we simply replaced the account's lists with that
-// push, anything added from the website since the extension last synced
-// would be wiped out — that was the bug. Instead:
+// The extension always sends its FULL local lists on a push. If we just
+// replaced the account's lists with that push, anything added from the
+// website since the extension last synced would be wiped out. So instead:
 //
 //  - Extension pushes ("source" absent): MERGE, never blindly replace.
 //    New = (server ∪ pushed) minus the items the extension previously had

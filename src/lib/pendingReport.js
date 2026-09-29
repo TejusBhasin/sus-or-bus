@@ -1,3 +1,8 @@
+// When you hit "run the check" on the home page, the analysis request starts
+// immediately and the app navigates to /report/pending. This module is the
+// handoff between those two pages: home stores the in-flight promise here,
+// the report page picks it up and waits for the result.
+
 let pendingReportPromise = null;
 let analyzeErrorMessage = null;
 

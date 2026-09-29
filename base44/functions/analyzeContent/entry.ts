@@ -1,6 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { creditFreezeActive, creditFreezeResponse } from '../../shared/creditFreeze.ts';
 
+// How a scan flows through this function:
+//   1. validate the input
+//   2. for URLs: normalize it, serve a cached report if we have a fresh one,
+//      otherwise fetch the page HTML
+//   3. send the content to the LLM and get a structured verdict back
+//   4. save it as a Report and return it to the caller
+
 const FETCH_TIMEOUT_MS = 15000;
 const MAX_HTML = 50000;
 const MAX_ANALYSIS = 40000;

@@ -2,69 +2,104 @@
 
 **Is it bussin, or is it sus?**
 
-Sus or Bus is a web-safety verification platform that analyzes links, emails, code, and text for potential threats and gives you a simple, honest verdict: **BUS** (safe, legit, bussin) or **SUS** (suspicious, sketchy, unsafe).
+Sus or Bus checks links, emails, code, documents, and plain text for scams, phishing, and other sketchy behavior — then gives you one honest verdict: **BUS** (safe, legit) or **SUS** (suspicious, unsafe).
+
+Try it live at **https://susbus.base44.app**
+
+![Sus or Bus home screen](docs/screenshot.png)
 
 ## What it does
 
-Paste in any of these and get an instant safety report:
+Paste any of these in and get an instant safety report:
 
-- 🔗 **Links** — live site analysis with a safety score, trackers, data collection, and red/green flags
-- 🧬 **HTML & code** — static analysis of source code for malicious patterns
-- 📧 **Emails** — phishing, spoofing, and social-engineering detection
-- 📝 **Text** — scam pattern and misleading-content checks
-- 📄 **Documents** — uploaded files checked for suspicious links, payment requests, and scam instructions
+- **Links** — the site is fetched and analyzed: safety score, trackers, data collection, red/green flags
+- **HTML / code** — static analysis of the source for malicious patterns
+- **Emails** — phishing, spoofing, and social-engineering detection
+- **Text** — scam-pattern and misleading-content checks
+- **Documents** — uploaded files checked for suspicious links, payment requests, and scam instructions
 
-Every report includes:
+Every report gives you:
 
-- A **0–100 safety score** with a binary BUS/SUS verdict
-- **Two explanations per finding** — plain language for everyone ("simple" mode) and technical detail for security-savvy users ("nerd" mode)
-- Trackers, data-collection practices, and detected technologies
-- Source-code viewer for analyzed HTML/code
-- **Safer alternatives** — 3–5 reputable alternatives suggested when a site is rated SUS
-- Shareable report links, PDF export, and one-click re-scan
+- a **0–100 safety score** with the BUS/SUS verdict
+- findings written two ways — plain language in **simple** mode, security-savvy detail in **nerd** mode
+- trackers, data-collection practices, and detected technologies
+- a source-code viewer for analyzed HTML/code
+- **safer alternatives** — 3–5 reputable sites suggested when a site is rated SUS
+- shareable links, PDF export, and one-click re-scan
 
-Smart efficiency features keep it fast and cheap:
+Every scan costs money (it sends the content to an AI model), so a few things keep it fast and cheap:
 
-- **7-day shared report cache** — recently scanned URLs return instantly
-- **Trusted-domain bypass** — well-known safe domains skip scanning entirely
-- **30-day alternatives cache** — safer-alternative lookups are cached per site
+- **7-day shared cache** — a URL scanned by anyone in the last week returns instantly for everyone
+- **trusted domains** — well-known sites like Google or Wikipedia are never scanned at all
+- **30-day alternatives cache** — repeated "find a safer site" lookups are free
 
-## Browser extension
+## The browser extension
 
-The Sus or Bus browser extension brings real-time protection to your browsing:
+The extension (Chrome + Safari, in `extension/`) brings the same checks to your browsing:
 
-- Intercepts risky link clicks and scans them before you land
-- Full-screen takeover on direct navigation to flagged sites
+- clicks on links to other sites get scanned before you land; a corner popup shows the verdict with Continue / Cancel
+- opening a SUS site directly (typed address, bookmark, pinned tab) triggers a full-screen report
 - "Don't ask again" whitelisting for sites you trust
-- Optional account to sync your whitelist/blacklist across devices
-- Available for **Chrome** and **Safari** (see the in-app Extension page for install instructions)
+- an optional account that syncs your whitelist/blacklist between the extension and the website
+
+## How a scan works
+
+1. The frontend (`src/pages/Home.jsx`) sends the input to the `analyzeContent` backend function
+2. URLs are normalized, then checked against the shared cache — a fresh hit is returned without spending anything
+3. Otherwise the page is fetched and its HTML is sent to an LLM, which returns a structured verdict (score, findings, details) as JSON
+4. The result is saved as a `Report` record and the frontend renders it (`src/pages/Report.jsx`)
+
+Account sync is its own little system: the website and the extension each hold the user's whitelist/blacklist, and the `accountLists` function merges the two sides without losing changes from either one (see the comments in `base44/functions/accountLists/entry.ts`).
+
+## Run it locally
+
+You need Node 18 or newer.
+
+```bash
+git clone https://github.com/TejusBhasin/sus-or-bus.git
+cd sus-or-bus
+npm install
+npm run dev
+```
+
+The frontend runs on the localhost URL Vite prints. The safety-analysis functions live on the app's hosted backend, so scans work out of the box — no API keys or setup needed.
+
+To try the browser extension:
+
+1. Open `chrome://extensions` and turn on **Developer mode**
+2. Click **Load unpacked** and pick the `extension/sus-or-bus` folder
+3. Click a link to another site — the corner popup should appear
 
 ## Tech stack
 
-- **Frontend:** React 18, Vite, Tailwind CSS, shadcn/ui, lucide-react
-- **Backend:** serverless functions for content analysis and account sync
-- **AI:** LLM-powered analysis with structured, dual-audience output
-- **i18n:** 16 languages, light/dark themes, mobile-first design
+- React 18, Vite, Tailwind CSS, shadcn/ui, lucide-react
+- Serverless backend functions (`base44/functions/`) for analysis, accounts, and list sync
+- LLM-powered analysis with structured, dual-audience output
+- 16 languages, light/dark theme, mobile-first design
 
 ## Project structure
 
 ```
 src/
-  pages/          # App screens (Home, Report, Settings, Account, FAQ, legal pages)
+  pages/           app screens (Home, Report, Settings, Account, FAQ, legal pages)
   components/
-    susbus/       # Feature components (verdicts, score gauge, lists, etc.)
-    ui/           # shadcn/ui primitives
-  lib/            # i18n, theming, auth, utilities
-base44/           # Backend: entities, functions, config
+    susbus/        feature components (verdict display, score gauge, banners...)
+    ui/            shadcn/ui primitives
+  lib/             i18n, theming, utilities
+base44/
+  entities/        data schemas (Report, ExtensionAccount)
+  functions/       backend: analyzeContent, findAlternatives, account auth + sync
 extension/
-  sus-or-bus/          # Chrome extension (Manifest V3)
-  sus-or-bus-safari/   # Safari variant
+  sus-or-bus/          Chrome extension (Manifest V3)
+  sus-or-bus-safari/   Safari variant
 ```
 
-## Getting involved
+## What's next
 
-Found a bug or a site that gets the wrong verdict? Open an issue or reach out at [tejusbhasin17@gmail.com](mailto:tejusbhasin17@gmail.com).
+- publish the Chrome extension to the Web Store
+- email-header checks (SPF/DKIM) for the email analyzer
+- community verdicts — let users flag wrong ratings and feed corrections back in
 
 ## License
 
-All rights reserved © Sus or Bus
+[MIT](LICENSE) © 2026 Tejus Bhasin
