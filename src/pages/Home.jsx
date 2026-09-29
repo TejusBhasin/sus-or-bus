@@ -13,6 +13,7 @@ import DocumentUpload from '@/components/susbus/DocumentUpload';
 import Footer from '@/components/susbus/Footer';
 import MaintenanceBanner from '@/components/susbus/MaintenanceBanner';
 import HomeSections from '@/components/susbus/HomeSections';
+import ScrollDownButton from '@/components/susbus/ScrollDownButton';
 import { useLanguage } from '@/lib/i18n';
 
 const inputTypes = [
@@ -102,6 +103,8 @@ export default function Home() {
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-indigo-600/10 blur-[120px]" />
         <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px]" />
       </div>
+
+      <ScrollDownButton />
 
       <PullToRefresh onRefresh={() => { setContent(''); setError(''); setInputType('url'); setDocFile(null); }}>
       <div className="relative max-w-2xl mx-auto px-5 py-8 flex-1 w-full">

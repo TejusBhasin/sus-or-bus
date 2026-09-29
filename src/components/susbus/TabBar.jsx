@@ -1,11 +1,12 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home as HomeIcon, Settings as SettingsIcon } from 'lucide-react';
+import { Home as HomeIcon, Settings as SettingsIcon, Puzzle } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const tabs = [
   { path: '/', labelKey: 'nav_home', icon: HomeIcon, isActive: (p) => p === '/' || p.startsWith('/report') },
+  { path: '/extension', label: 'Extension', icon: Puzzle, isActive: (p) => p.startsWith('/extension') },
   { path: '/settings', labelKey: 'nav_settings', icon: SettingsIcon, isActive: (p) => p.startsWith('/settings') }
 ];
 
@@ -22,7 +23,7 @@ export default function TabBar() {
       aria-label="App navigation"
       className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/80 backdrop-blur pb-safe-nav"
     >
-      <div className="max-w-2xl mx-auto grid grid-cols-2">
+      <div className="max-w-2xl mx-auto grid grid-cols-3">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = tab.isActive(pathname);
@@ -37,7 +38,7 @@ export default function TabBar() {
               )}
             >
               <Icon className={cn('w-5 h-5', active ? 'text-emerald-500 dark:text-emerald-400' : '')} />
-              <span>{t(tab.labelKey)}</span>
+              <span>{tab.label || t(tab.labelKey)}</span>
             </button>
           );
         })}
