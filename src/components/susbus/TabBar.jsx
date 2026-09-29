@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 const tabs = [
   { path: '/', labelKey: 'nav_home', icon: HomeIcon, isActive: (p) => p === '/' || p.startsWith('/report') },
-  { path: '/extension', label: 'Extension', icon: Puzzle, isActive: (p) => p.startsWith('/extension') },
+  { path: '/extension', label: 'Extension/App', icon: Puzzle, isActive: (p) => p.startsWith('/extension') },
   { path: '/settings', labelKey: 'nav_settings', icon: SettingsIcon, isActive: (p) => p.startsWith('/settings') }
 ];
 

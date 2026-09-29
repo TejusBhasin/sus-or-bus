@@ -1,5 +1,5 @@
 import React from 'react';
-import { Chrome, Download, MousePointerClick, Zap, ListChecks, CheckCircle2, Puzzle, ShieldAlert, Maximize2, ShieldCheck, Compass, Smartphone } from 'lucide-react';
+import { Chrome, Download, MousePointerClick, Zap, ListChecks, CheckCircle2, Puzzle, ShieldAlert, Maximize2, ShieldCheck, Compass, Smartphone, ArrowDown } from 'lucide-react';
 import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
 
@@ -111,6 +111,19 @@ export default function Extension() {
             safety engine as this app, so the rating you see in the popup is the same analysis you
             get here — with the full report one tap away.
           </p>
+          <div className="mt-6 text-center">
+            <a
+              href="#the-app"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('the-app').scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              See the app
+              <ArrowDown className="w-4 h-4" />
+            </a>
+          </div>
         </section>
 
         {/* How it works */}
@@ -206,7 +219,7 @@ export default function Extension() {
         </section>
 
         {/* iOS app */}
-        <section className="mt-12">
+        <section id="the-app" className="mt-12">
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground mb-4">
             <Smartphone className="w-4 h-4" />
             on your phone
