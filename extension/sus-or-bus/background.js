@@ -73,9 +73,24 @@ function isTrusted(url) {
 }
 
 // The user's "Don't ask again" list, persisted in local storage.
-async function isWhitelisted(origin) {
+// Matching key for a URL: the origin by default, or the bare domain when
+// "match whole domains" is on — then every subdomain of a site is checked,
+// whitelisted, and cached together.
+async function getMatchMode() {
+  const s = await chrome.storage.local.get('sb_match_mode');
+  return s.sb_match_mode === 'domain' ? 'domain' : 'origin';
+}
+
+async function keyFor(url) {
+  const origin = originOf(url);
+  if (!origin) return null;
+  if ((await getMatchMode()) === 'domain') return new URL(url).hostname.replace(/^www\./, '');
+  return origin;
+}
+
+async function isWhitelisted(key) {
   const store = await chrome.storage.local.get('sb_whitelist');
-  return (store.sb_whitelist || []).includes(origin);
+  return (store.sb_whitelist || []).includes(key);
 }
 
 async function addWhitelist(origin) {
@@ -145,7 +160,14 @@ chrome.storage.local.get('sb_token').then((s) => {
 // (set from the toolbar popup). While paused, everything passes through.
 async function isPaused() {
   const s = await chrome.storage.local.get('sb_paused_until');
-  return !!(s.sb_paused_until && Date.now() < s.sb_paused_until);
+  if (s.sb_paused_until && Date.now() < s.sb_paused_until) return true;
+  // "Pause for this session" lives in session storage — it clears when the
+  // browser closes, which is exactly what "this session" should mean.
+  if (chrome.storage.session) {
+    const ss = await chrome.storage.session.get('sb_session_paused');
+    if (ss.sb_session_paused) return true;
+  }
+  return false;
 }
 
 async function readCache() {
@@ -229,10 +251,11 @@ async function handleCheck(url, sender) {
   if (await isPaused()) return { status: 'pass' }; // paused until a chosen time — let everything through
   if (isGoogleSearch(url)) return { status: 'pass' }; // Google Search pages are never checked
   if (isTrusted(url)) return { status: 'pass' }; // well-known safe domain — no scan needed
-  if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
+  const key = await keyFor(url);
+  if (await isWhitelisted(key)) return { status: 'pass' }; // user whitelisted this site
 
   const cache = await readCache();
-  const hit = cache[origin];
+  const hit = cache[key];
   if (hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS) {
     return { status: 'hit', data: hit };
   }
@@ -240,8 +263,11 @@ async function handleCheck(url, sender) {
   getScan(origin).then(
     async (entry) => {
       const c = await readCache();
-      c[origin] = entry;
+      c[key] = entry;
       await writeCache(c);
+      bumpStats(entry.verdict);
+      maybeNotify(entry);
+      updateBadge(sender.tab && sender.tab.id, url);
       notify(sender, { type: 'sb:update', url, status: 'hit', data: entry });
     },
     (err) => notify(sender, { type: 'sb:update', url, status: 'error', message: err.message })
@@ -265,10 +291,11 @@ async function handleGate(msg, sender) {
   if (isTrusted(msg.url)) return { status: 'pass' }; // well-known safe domain — no scan needed
   if (msg.refOrigin && msg.refOrigin === origin) return { status: 'pass' }; // same-site chain
   if (consumeAllow(origin)) return { status: 'pass' }; // already approved this hop
-  if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
+  const key = await keyFor(msg.url);
+  if (await isWhitelisted(key)) return { status: 'pass' }; // user whitelisted this site
 
   const cache = await readCache();
-  const hit = cache[origin];
+  const hit = cache[key];
   if (hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS) {
     return { status: 'takeover', data: hit };
   }
@@ -276,8 +303,11 @@ async function handleGate(msg, sender) {
   getScan(origin).then(
     async (entry) => {
       const c = await readCache();
-      c[origin] = entry;
+      c[key] = entry;
       await writeCache(c);
+      bumpStats(entry.verdict);
+      maybeNotify(entry);
+      updateBadge(sender.tab && sender.tab.id, msg.url);
       notify(sender, { type: 'sb:update', url: msg.url, status: 'hit', data: entry });
     },
     (err) => notify(sender, { type: 'sb:update', url: msg.url, status: 'error', message: err.message })
@@ -336,13 +366,18 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
   if (msg.type === 'sb:whitelist') {
-    const origin = originOf(msg.url);
-    if (origin) {
-      addWhitelist(origin) // remember the site across sessions
-        .then(syncAccountLists)
-        .catch(() => {});
-      allowOrigin(origin); // and let this navigation through
-    }
+    (async () => {
+      const origin = originOf(msg.url);
+      const key = origin ? await keyFor(msg.url) : null;
+      if (key) {
+        addWhitelist(key) // remember the site across sessions
+          .then(syncAccountLists)
+          .catch(() => {});
+      }
+      if (origin) {
+        allowOrigin(origin); // and let this navigation through
+      }
+    })();
     sendResponse({ status: 'ok' });
     return;
   }
@@ -403,4 +438,143 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       .catch((err) => sendResponse({ alternatives: [], error: err.message }));
     return true;
   }
+  if (msg.type === 'sb:scan-current') {
+    // "Check this page" button in the popup
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const t = tabs && tabs[0];
+      if (t && t.url) scanAndReport(t.url);
+    });
+    sendResponse({ status: 'ok' });
+    return;
+  }
+});
+
+/* ---------- v1.5.0 additions ---------- */
+
+// Lifetime stats, shown in the popup as "Your numbers".
+async function bumpStats(verdict) {
+  const s = await chrome.storage.local.get('sb_stats');
+  const st = s.sb_stats || { checked: 0, sus: 0, bus: 0 };
+  st.checked += 1;
+  st[verdict === 'bus' ? 'bus' : 'sus'] += 1;
+  chrome.storage.local.set({ sb_stats: st }).catch(() => {});
+}
+
+// Toolbar badge: a green check or a red warning on the icon, per tab, taken
+// from the cached verdict of the site that tab is showing.
+async function updateBadge(tabId, url) {
+  if (!tabId || !url || !chrome.action) return;
+  try {
+    const key = await keyFor(url);
+    let text = '';
+    let color = '#64748b';
+    if (key) {
+      const cache = await readCache();
+      const hit = cache[key];
+      if (hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS) {
+        if (hit.verdict === 'bus') {
+          text = '\u2713';
+          color = '#34d399';
+        } else {
+          text = '!';
+          color = '#f87171';
+        }
+      }
+    }
+    chrome.action.setBadgeText({ tabId, text });
+    chrome.action.setBadgeBackgroundColor({ tabId, color });
+  } catch {
+    // badges are cosmetic — never let them break a check
+  }
+}
+
+chrome.tabs?.onActivated?.addListener((activeInfo) => {
+  chrome.tabs.get(activeInfo.tabId, (t) => {
+    if (t && t.url) updateBadge(activeInfo.tabId, t.url);
+  });
+});
+
+chrome.tabs?.onUpdated?.addListener((tabId, info, tab) => {
+  if (info.status === 'complete' && tab && tab.url) updateBadge(tabId, tab.url);
+});
+
+// Opt-in desktop alert when a fresh scan flags a site SUS.
+const notifReports = new Map(); // notification id -> report URL
+
+async function maybeNotify(entry) {
+  if (!entry || entry.verdict === 'bus' || !chrome.notifications) return;
+  const s = await chrome.storage.local.get('sb_notify');
+  if (!s.sb_notify) return;
+  const host = String(entry.origin || '').replace(/^https?:\/\//, '');
+  chrome.notifications.create(
+    {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icons/icon128.png'),
+      title: 'Sus or Bus flagged ' + host,
+      message: 'This site was rated SUS. Click to open the full report.'
+    },
+    (id) =>
+      notifReports.set(id, entry.reportId ? APP_ORIGIN + '/report/' + entry.reportId : entry.origin)
+  );
+}
+
+chrome.notifications?.onClicked?.addListener((id) => {
+  const target = notifReports.get(id);
+  notifReports.delete(id);
+  chrome.notifications.clear(id);
+  if (target) chrome.tabs.create({ url: target });
+});
+
+// Scan on demand (context menu, keyboard shortcut, popup button) and open
+// the full report in a new tab.
+async function scanAndReport(url) {
+  const origin = originOf(url);
+  if (!origin) return;
+  const key = await keyFor(url);
+  const cache = await readCache();
+  const hit = cache[key];
+  let entry = hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS ? hit : null;
+  if (!entry) {
+    try {
+      entry = await getScan(origin);
+      const c = await readCache();
+      c[key] = entry;
+      await writeCache(c);
+      bumpStats(entry.verdict);
+    } catch {
+      return; // scan failed — the usual in-page flows surface errors already
+    }
+  }
+  chrome.tabs.create({ url: entry.reportId ? APP_ORIGIN + '/report/' + entry.reportId : origin });
+}
+
+// Right-click menu on links and pages.
+chrome.runtime.onInstalled.addListener(() => {
+  if (!chrome.contextMenus) return;
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: 'sb-check-link',
+      title: 'Check this link with Sus or Bus',
+      contexts: ['link']
+    });
+    chrome.contextMenus.create({
+      id: 'sb-check-page',
+      title: 'Check this page with Sus or Bus',
+      contexts: ['page']
+    });
+  });
+});
+
+chrome.contextMenus?.onClicked?.addListener((info, tab) => {
+  const url = info.linkUrl || (tab && tab.url);
+  if (url) scanAndReport(url);
+});
+
+// Keyboard shortcut: Ctrl/Cmd+Shift+S checks the page you're on.
+chrome.commands?.onCommand?.addListener((command) => {
+  if (command !== 'check-current-page') return;
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const t = tabs && tabs[0];
+    if (t && t.url) scanAndReport(t.url);
+  });
 });

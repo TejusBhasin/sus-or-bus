@@ -1,14 +1,20 @@
 {
   "manifest_version": 3,
   "name": "Sus or Bus — website safety check",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Before you open a website see its SUS or BUS rating and decide whether to continue",
-  "permissions": ["storage"],
+  "permissions": ["storage", "contextMenus", "notifications"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": { "service_worker": "background.js" },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Sus or Bus"
+  },
+  "commands": {
+    "check-current-page": {
+      "suggested_key": { "default": "Ctrl+Shift+S", "mac": "Command+Shift+S" },
+      "description": "Check the safety of the current page"
+    }
   },
   "content_scripts": [
     {

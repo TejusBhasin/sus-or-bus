@@ -7,7 +7,10 @@
 <body>
   <header>
     <span class="brand">SUS or BUS</span>
-    <a id="open-site" href="#">Open the site ↗</a>
+    <div class="hdr-right">
+      <button id="theme-toggle" class="icon-btn" title="Toggle light / dark theme">&#9788;</button>
+      <a id="open-site" href="#">Open the site &#8599;</a>
+    </div>
   </header>
 
   <!-- Pause ("disable until…") -->
@@ -20,18 +23,54 @@
     </div>
   </section>
   <section id="pause-form">
-    <div class="sec-title">Disable checks until…</div>
+    <div class="sec-title">Disable checks until&#8230;</div>
     <input type="datetime-local" id="pause-dt" class="input">
-    <div class="row">
+    <div class="row row-3">
       <button id="pause-1h" class="btn">1 hour</button>
+      <button id="pause-session" class="btn" hidden>This session</button>
       <button id="pause-set" class="btn go">Pause</button>
     </div>
   </section>
 
   <!-- Recent verdicts -->
   <section>
-    <div class="sec-title">Recent checks</div>
+    <div class="sec-title-row">
+      <div class="sec-title">Recent checks</div>
+      <button id="check-page" class="mini-btn">Check this page</button>
+    </div>
+    <input type="search" id="recent-search" class="input search" placeholder="Search your checks&#8230;">
+    <div class="chips">
+      <button class="chip on" data-f="all">All</button>
+      <button class="chip" data-f="bus">Bus</button>
+      <button class="chip" data-f="sus">Sus</button>
+    </div>
     <div id="recent"></div>
+    <div class="row">
+      <button id="clear-recent" class="btn subtle">Clear history</button>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section>
+    <div class="sec-title">Your numbers</div>
+    <div class="stats">
+      <div class="stat"><span id="stat-checked" class="stat-num">0</span><span class="stat-lbl">sites checked</span></div>
+      <div class="stat"><span id="stat-sus" class="stat-num sus">0</span><span class="stat-lbl">flagged sus</span></div>
+      <div class="stat"><span id="stat-bus" class="stat-num bus">0</span><span class="stat-lbl">rated bus</span></div>
+    </div>
+  </section>
+
+  <!-- Settings & data -->
+  <section>
+    <div class="sec-title">Settings</div>
+    <label class="opt"><input type="checkbox" id="opt-subdomains"> Match whole domains — treat subdomains as one site</label>
+    <label class="opt"><input type="checkbox" id="opt-notify"> Desktop alert when a site is flagged SUS</label>
+    <div class="row">
+      <button id="export-data" class="btn">Export data</button>
+      <button id="import-data" class="btn">Import data</button>
+    </div>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+    <p class="muted small">Export saves your lists, history and stats as a JSON file. Import merges a backup back in.</p>
   </section>
 
   <!-- Account -->
