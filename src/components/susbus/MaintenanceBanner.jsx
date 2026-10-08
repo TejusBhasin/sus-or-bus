@@ -8,7 +8,7 @@ export default function MaintenanceBanner() {
         <Wrench className="w-4 h-4 mt-0.5 shrink-0" />
         <span>
           <span className="font-semibold">Website under maintenance.</span>{' '}
-          May not function until October 9th, 2026, at 12:01 AM.
+          May not function until October 16th, 2026, at 12:01 AM.
         </span>
       </div>
     </div>
