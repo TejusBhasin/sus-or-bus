@@ -1,5 +1,5 @@
 import React from 'react';
-import { Chrome, Download, MousePointerClick, Zap, ListChecks, CheckCircle2, Puzzle, ShieldAlert, Maximize2, ShieldCheck, Compass, Smartphone, ArrowDown } from 'lucide-react';
+import { Chrome, Download, MousePointerClick, Zap, ListChecks, CheckCircle2, Puzzle, ShieldAlert, Maximize2, ShieldCheck, Compass, Smartphone, ArrowDown, History } from 'lucide-react';
 import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
 
@@ -28,6 +28,11 @@ const features = [
     icon: ShieldCheck,
     title: 'Safer alternatives',
     text: 'If a site is rated SUS, the proceed button shrinks and a one-tap lookup suggests well-known, safe websites that do the same job — in the popup and on reports in the app.'
+  },
+  {
+    icon: History,
+    title: 'Toolbar dashboard',
+    text: 'Click the Sus or Bus icon on the browser bar: see your recent verdicts, sign in or out of your account, and pause checks until a date and time you choose.'
   }
 ];
 
@@ -105,7 +110,7 @@ export default function Extension() {
             New pushes and updates land here on the site 3–5 business days sooner than on the store —
             every version has to sit in Google's approval queue first.
           </p>
-          <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus.zip · v1.3.1 · free</p>
+          <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus.zip · v1.4.0 · free</p>
         </div>
 
         {/* What it is */}
@@ -121,7 +126,7 @@ export default function Extension() {
             continue or cancel. Open a site directly — a pinned tab, bookmark, or typed address —
             and the full report covers the screen until you choose to proceed. It uses the same
             safety engine as this app, so the rating you see in the popup is the same analysis you
-            get here — with the full report one tap away.
+            get here — with the full report one tap away. Every site scan also reads the site\u2019s own terms & conditions and privacy policy and tells you what they really mean — warnings or green lights included.
           </p>
         </section>
 
@@ -199,7 +204,7 @@ export default function Extension() {
               <Download className="w-4 h-4" />
               Download for Safari
             </a>
-            <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus-safari.zip · v1.3.1 · macOS 12+</p>
+            <p className="mt-2 text-xs text-muted-foreground font-mono">sus-or-bus-safari.zip · v1.4.0 · macOS 12+</p>
           </div>
           <ol className="mt-4 rounded-2xl border border-border bg-card/60 divide-y divide-border">
             {[

@@ -36,6 +36,7 @@ const translations = {
     iframe_blocked: "You can open this in a new tab if you believe it's safe.",
     nav_home: 'Home', nav_settings: 'Settings',
     tab_doc: 'Document', ph_doc: 'Upload a document to analyze...',
+    tab_terms: 'Terms', ph_terms: 'Paste terms & conditions or a privacy policy...',
     upload_doc: 'Upload a document to analyze', doc_types: 'PDF, TXT, DOCX…', doc_one_limit: '1 document at a time',
     rerun_scan: 'Rerun scan', final_verdict: 'Final verdict', verdict_valid: 'Valid', verdict_not_valid: 'Not Valid'
   },

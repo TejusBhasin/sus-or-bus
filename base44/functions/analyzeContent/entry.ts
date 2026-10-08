@@ -18,6 +18,42 @@ function extractMeta(html, attr, key) {
   return m ? m[1].trim() : '';
 }
 
+// Terms & privacy policy check — find links to the site's own terms /
+// privacy policy pages inside its homepage HTML.
+function findPolicyLinks(html, baseUrl) {
+  const found = { terms: '', privacy: '' };
+  let baseHost = '';
+  try { baseHost = new URL(baseUrl).host; } catch { return found; }
+  const re = /<a[^>]+href=["']([^"'#]+)["'][^>]*>([\s\S]{0,150}?)<\/a>/gi;
+  let m;
+  while ((m = re.exec(html)) && (!found.terms || !found.privacy)) {
+    const href = m[1];
+    const text = (m[2] || '').replace(/<[^>]*>/g, ' ').toLowerCase();
+    if (/^(mailto:|tel:|javascript:)/i.test(href)) continue;
+    let abs;
+    try { abs = new URL(href, baseUrl).toString(); } catch { continue; }
+    try { if (new URL(abs).host !== baseHost) continue; } catch { continue; }
+    const hay = abs.toLowerCase() + ' ' + text;
+    if (!found.terms && /(terms|conditions|tos\b|legal)/.test(hay)) found.terms = abs;
+    else if (!found.privacy && /(privacy|datenschutz|confidentialit)/.test(hay)) found.privacy = abs;
+  }
+  return found;
+}
+
+async function fetchPolicyText(url) {
+  try {
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(8000)
+    });
+    const html = await resp.text();
+    return html.slice(0, 15000);
+  } catch {
+    return '';
+  }
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -28,7 +64,7 @@ export default async function(req) {
     const fileUrl = (body.fileUrl || '').trim();
     const fileName = (body.fileName || '').trim();
 
-    if (!['url', 'html', 'code', 'email', 'text', 'document'].includes(inputType)) {
+    if (!['url', 'html', 'code', 'email', 'text', 'terms', 'document'].includes(inputType)) {
       return Response.json({ error: 'Invalid input type' }, { status: 400 });
     }
     if (inputType === 'document') {
@@ -40,7 +76,9 @@ export default async function(req) {
     if (inputType !== 'url' && creditFreezeActive()) return creditFreezeResponse();
 
     let analysisContent = content;
+    let policySection = '';
     let url = '';
+    let pageHtml = '';
     let sourceCode = '';
     const preview = { title: '', description: '', status: null, finalUrl: '', fetchError: '' };
 
@@ -76,6 +114,7 @@ export default async function(req) {
             fetchError: ''
           },
           sourceCode: prev.source_code || '',
+          terms_privacy: prev.terms_privacy || null,
           reportId: prev.id,
           cached: true
         });
@@ -89,6 +128,7 @@ export default async function(req) {
           signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
         });
         const html = await resp.text();
+        pageHtml = html;
         analysisContent = html.slice(0, MAX_HTML);
         sourceCode = html.slice(0, 20000);
         const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
@@ -99,6 +139,17 @@ export default async function(req) {
       } catch (e) {
         preview.fetchError = e.message;
       }
+      // Fetch the site's own terms & conditions and privacy policy pages so
+      // the LLM can tell the user what those documents really say.
+      try {
+        const links = findPolicyLinks(pageHtml, u);
+        const [termsText, privacyText] = await Promise.all([
+          links.terms ? fetchPolicyText(links.terms) : Promise.resolve(''),
+          links.privacy ? fetchPolicyText(links.privacy) : Promise.resolve('')
+        ]);
+        if (termsText) policySection += `\n----- SITE TERMS & CONDITIONS (excerpt) -----\n${termsText}\n`;
+        if (privacyText) policySection += `\n----- SITE PRIVACY POLICY (excerpt) -----\n${privacyText}\n`;
+      } catch {}
     }
 
     let documentNote = '';
@@ -117,6 +168,7 @@ ${documentNote}
 ----- INPUT START -----
 ${analysisContent.slice(0, MAX_ANALYSIS)}
 ----- INPUT END -----
+${policySection}
 
 Produce a rigorous but fair assessment. Look for: data collection & privacy practices, third-party trackers, suspicious scripts, phishing/social-engineering signals, misleading content, code safety, reputation signals, and (for emails) spoofing/urgency/red flags. For documents, also inspect: suspicious links, requests for sensitive information or payments, scam patterns, malicious instructions, and the legitimacy of the sender's claims.
 
@@ -139,6 +191,14 @@ Return a JSON object with EXACTLY this shape:
     "greenFlags": ["specific positives"],
     "codeNotes": "TECHNICAL notes about any code/html analyzed, or empty string",
     "simple_code_notes": "plain-language version of the code notes (what it means in everyday terms), or empty string"
+  },
+  "terms_privacy": {
+    "found": ["which policy documents you actually saw: 'terms' and/or 'privacy'; empty array if none"],
+    "summary": "one TECHNICAL sentence about what the site's terms & privacy policy actually mean for the user — warn about one-sided clauses, surprise charges, auto-renewals, broad data sharing or vague deletion rights; give genuine encouragement when the policies are user-friendly. Empty string if no policies were seen.",
+    "simple_summary": "plain-language version of the same sentence (explain like you're talking to your grandma), or empty string",
+    "points": [
+      { "title": "short label", "severity": "good" | "warning" | "bad", "description": "1-2 sentence TECHNICAL explanation of one policy point", "simple_description": "1-2 sentence plain-language explanation anyone can understand" }
+    ]
   }
 }
 
@@ -146,7 +206,9 @@ Rules:
 - Give 5 to 8 points covering different angles.
 - Score guide: 75-100 = clearly bus, 60-74 = leans bus, 45-59 = leans sus, below 45 = clearly sus. Set "verdict" to match the lean.
 - Be concrete: cite what you actually saw in the input. Never invent facts not supported by the input.
-- The "simple_*" fields must convey the SAME meaning as their technical counterparts but in plain language a non-technical person understands. Never contradict the technical version.`;
+- The "simple_*" fields must convey the SAME meaning as their technical counterparts but in plain language a non-technical person understands. Never contradict the technical version.
+- Fill "terms_privacy" ONLY from the SITE POLICY excerpts (terms & conditions / privacy policy). Give 1 to 4 points about the policies themselves: what data they collect and share, one-sided clauses, surprise charges, auto-renewals, account deletion rights, etc. If no policy excerpts were provided, use found: [], empty summaries and empty points.
+${inputType === 'terms' ? "- This input IS a terms / privacy policy document. Base \"terms_privacy\" on the input itself, and make your main points about what the policy means for the user." : ''}`;
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
@@ -184,6 +246,26 @@ Rules:
               codeNotes: { type: 'string' },
               simple_code_notes: { type: 'string' }
             }
+          },
+          terms_privacy: {
+            type: 'object',
+            properties: {
+              found: { type: 'array', items: { type: 'string' } },
+              summary: { type: 'string' },
+              simple_summary: { type: 'string' },
+              points: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string' },
+                    severity: { type: 'string' },
+                    description: { type: 'string' },
+                    simple_description: { type: 'string' }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -208,7 +290,8 @@ Rules:
       },
       preview_title: preview.title || (result.details && result.details.title) || '',
       preview_description: preview.description || (result.details && result.details.description) || '',
-      source_code: sourceCode
+      source_code: sourceCode,
+      terms_privacy: result.terms_privacy || null
     });
 
     return Response.json({
@@ -219,6 +302,7 @@ Rules:
       details: result.details || {},
       preview,
       sourceCode,
+      terms_privacy: result.terms_privacy || null,
       reportId: report.id
     });
   } catch (error) {

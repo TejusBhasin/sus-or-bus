@@ -110,6 +110,10 @@
     .sb-input:focus { outline: none; border-color: #818cf8; }
     .sb-err { color: #f87171; font-size: 12px; margin-top: 6px; }
     .sb-acc-ok { color: #34d399; font-size: 13px; font-weight: 600; }
+    .sb-tp { margin-top: 12px; border-top: 1px dashed rgba(148,163,184,0.25); padding-top: 10px; }
+    .sb-tp-head { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; }
+    .sb-tp-sum { color: #cbd5e1; font-size: 12px; line-height: 1.5; }
+    .sb-tp-pt { display: flex; gap: 8px; margin-top: 6px; }
   `;
 
   function escapeHtml(s) {
@@ -240,6 +244,23 @@
     </div>
   `;
 
+  // Terms & privacy policy check — summary the scan produced from the site's
+  // own terms / privacy pages: warns, or reassures, in plain language.
+  function termsHtml(tp) {
+    if (!tp || (!tp.summary && !(tp.points && tp.points.length))) return '';
+    const pts = (tp.points || [])
+      .slice(0, 2)
+      .map(
+        (p) => `
+        <div class="sb-tp-pt">
+          <span class="sb-dot ${escapeHtml(p.severity || 'warning')}"></span>
+          <div><span class="sb-pt-title">${escapeHtml(p.title)}</span> <span class="sb-pt-note">${escapeHtml(p.note || '')}</span></div>
+        </div>`
+      )
+      .join('');
+    return `<div class="sb-tp"><div class="sb-tp-head">Terms & privacy check</div>${tp.summary ? `<div class="sb-tp-sum">${escapeHtml(tp.summary)}</div>` : ''}${pts}</div>`;
+  }
+
   function resultBody(url, d) {
     const verdict = d.verdict === 'bus' ? 'bus' : 'sus';
     const points = (d.points || [])
@@ -260,6 +281,7 @@
       <div class="sb-valid ${verdict}">Final verdict: ${verdict === 'bus' ? 'Valid' : 'Not Valid'}</div>
       <div class="sb-score">${Math.round(d.score || 0)} / 100</div>
       ${points ? `<div class="sb-points">${points}</div>` : ''}
+      ${termsHtml(d.terms)}
       ${verdict === 'sus' ? '<a class="sb-link sb-report" data-act="alt">Find alternative websites →</a>' : ''}
       ${pendingReportId ? `<a class="sb-link sb-report" data-act="report">Full report →</a>` : ''}
       <div class="sb-anyway"><a class="sb-link" data-act="whitelist">Don\u2019t ask again for this site</a> · <a class="sb-link" data-act="blacklist">Add to blacklist — never visit</a></div>
@@ -454,7 +476,7 @@
     return `
       <div class="sb-acc">
         <div class="sb-acc-q">Create a free account?</div>
-        <div class="sb-acc-note">Optional — checking sites always works without one. An account syncs your safe-site and never-visit lists between this extension and the Sus or Bus site.</div>
+        <div class="sb-acc-note">Optional — checking sites always works without one. An account syncs your safe-site and never-visit lists between this extension and the Sus or Bus site. You can also create one anytime from the toolbar icon.</div>
         <div class="sb-row">
           <button class="sb-btn go" data-act="acc-yes">Create account</button>
           <button class="sb-btn" data-act="acc-no">No thanks</button>
@@ -468,7 +490,7 @@
       ${headHtml}
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(pendingUrl))}</div>
-        <p class="sb-acc-note">No problem — checking sites always works without an account. If you change your mind later, you'll need to uninstall and reinstall the extension to create one.</p>
+        <p class="sb-acc-note">No problem — checking sites always works without an account. If you change your mind later, click the Sus or Bus icon on the browser toolbar to create one or sign in.</p>
         <button class="sb-btn go" data-act="gotit">Got it</button>
       </div>
     `);

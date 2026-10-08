@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import {
   ArrowLeft, ExternalLink, Globe, Code2, FileText, Mail, Eye, ShieldAlert,
-  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain, Settings, RotateCw
+  BadgeCheck, Server, Share2, Download, Copy, Check, Clock, CheckCircle2, AlertTriangle, XCircle, User, Brain, Settings, RotateCw, Scale
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ import ScoreGauge from '@/components/susbus/ScoreGauge';
 import VerdictDisplay from '@/components/susbus/VerdictDisplay';
 import PointCard from '@/components/susbus/PointCard';
 import SourceCodeViewer from '@/components/susbus/SourceCodeViewer';
+import TermsPrivacyCard from '@/components/susbus/TermsPrivacyCard';
 import AlternativesCard from '@/components/susbus/AlternativesCard';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import NerdModeToggle from '@/components/susbus/NerdModeToggle';
@@ -22,8 +23,8 @@ import AnalyzingLoader from '@/components/susbus/AnalyzingLoader';
 import { analyzeContent } from '@/functions/analyzeContent';
 import { setPendingReport, getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
 
-const typeIcon = { url: Globe, html: Code2, code: Code2, email: Mail, text: FileText };
-const typeLabelKey = { url: 'tab_url', html: 'tab_html', code: 'tab_code', email: 'tab_email', text: 'tab_text' };
+const typeIcon = { url: Globe, html: Code2, code: Code2, email: Mail, text: FileText, terms: Scale, document: FileText };
+const typeLabelKey = { url: 'tab_url', html: 'tab_html', code: 'tab_code', email: 'tab_email', text: 'tab_text', terms: 'tab_terms', document: 'tab_doc' };
 
 function DetailList({ icon: Icon, title, items }) {
   if (!items || items.length === 0) return null;
@@ -311,6 +312,13 @@ export default function Report() {
         {report.input_type === 'url' && report.url && !isBus && (
           <div className="mb-6">
             <AlternativesCard url={report.url} />
+          </div>
+        )}
+
+        {/* Terms & privacy policy check */}
+        {report.terms_privacy && (
+          <div className="mb-6">
+            <TermsPrivacyCard tp={report.terms_privacy} mode={nerdMode} />
           </div>
         )}
 

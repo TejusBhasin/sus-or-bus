@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <span class="brand">SUS or BUS</span>
+    <a id="open-site" href="#">Open the site ↗</a>
+  </header>
+
+  <!-- Pause ("disable until…") -->
+  <section id="pause-active" hidden>
+    <div class="sec-title">Paused</div>
+    <p class="muted pause-until" id="pause-until"></p>
+    <div class="row">
+      <button id="pause-edit" class="btn">Change</button>
+      <button id="pause-cancel" class="btn go">Resume now</button>
+    </div>
+  </section>
+  <section id="pause-form">
+    <div class="sec-title">Disable checks until…</div>
+    <input type="datetime-local" id="pause-dt" class="input">
+    <div class="row">
+      <button id="pause-1h" class="btn">1 hour</button>
+      <button id="pause-set" class="btn go">Pause</button>
+    </div>
+  </section>
+
+  <!-- Recent verdicts -->
+  <section>
+    <div class="sec-title">Recent checks</div>
+    <div id="recent"></div>
+  </section>
+
+  <!-- Account -->
+  <section>
+    <div class="sec-title">Account</div>
+    <div id="acct-signedin" hidden>
+      <p class="muted" id="acct-email"></p>
+      <div class="row">
+        <button id="acct-logout" class="btn">Log out</button>
+      </div>
+    </div>
+    <div id="acct-form">
+      <input type="email" id="acct-email-in" class="input" placeholder="Email" autocomplete="email">
+      <input type="password" id="acct-pass" class="input" placeholder="Password (8+ characters)" autocomplete="new-password">
+      <p class="err" id="acct-err" hidden></p>
+      <div class="row">
+        <button id="acct-login" class="btn">Sign in</button>
+        <button id="acct-register" class="btn">Create account</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

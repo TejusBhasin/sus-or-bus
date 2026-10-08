@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { setPendingReport, getAnalyzeError, clearAnalyzeError } from '@/lib/pendingReport';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Globe, Code2, FileText, FileUp, Mail, ShieldAlert, Sparkles, Settings, UserPlus } from 'lucide-react';
+import { Loader2, Globe, Code2, FileText, FileUp, Mail, ShieldAlert, Sparkles, Settings, UserPlus, Scale } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import PullToRefresh from '@/components/susbus/PullToRefresh';
@@ -22,6 +22,7 @@ const inputTypes = [
   { id: 'code', labelKey: 'tab_code', icon: Code2, placeholderKey: 'ph_code' },
   { id: 'email', labelKey: 'tab_email', icon: Mail, placeholderKey: 'ph_email' },
   { id: 'text', labelKey: 'tab_text', icon: FileText, placeholderKey: 'ph_text' },
+  { id: 'terms', labelKey: 'tab_terms', icon: Scale, placeholderKey: 'ph_terms' },
   { id: 'document', labelKey: 'tab_doc', icon: FileUp, placeholderKey: 'ph_doc' }
 ];
 
@@ -31,6 +32,7 @@ function autoDetect(content) {
   if (/<\/?(html|head|body|div|script)\b/i.test(c)) return 'html';
   if (/(function|const|let|import|class|def|public|private|<\?php)/i.test(c)) return 'code';
   if (/(subject:|from:|reply-to|dear|regards|sincerely)/i.test(c)) return 'email';
+  if (/(terms of (service|use)|terms (and|&) conditions|privacy policy|cookie policy)/i.test(c) && c.length > 400) return 'terms';
   return 'text';
 }
 

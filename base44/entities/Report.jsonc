@@ -10,6 +10,7 @@
         "code",
         "email",
         "text",
+        "terms",
         "document"
       ]
     },
@@ -107,6 +108,48 @@
         },
         "simple_code_notes": {
           "type": "string"
+        }
+      }
+    },
+    "terms_privacy": {
+      "type": "object",
+      "properties": {
+        "found": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "summary": {
+          "type": "string"
+        },
+        "simple_summary": {
+          "type": "string"
+        },
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "severity": {
+                "type": "string",
+                "enum": [
+                  "good",
+                  "warning",
+                  "bad"
+                ]
+              },
+              "description": {
+                "type": "string"
+              },
+              "simple_description": {
+                "type": "string"
+              }
+            }
+          }
         }
       }
     },

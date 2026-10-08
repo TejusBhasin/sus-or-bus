@@ -141,6 +141,13 @@ chrome.storage.local.get('sb_token').then((s) => {
     .catch(() => {});
 });
 
+// "Disable until" — the user can pause all checks until a chosen date & time
+// (set from the toolbar popup). While paused, everything passes through.
+async function isPaused() {
+  const s = await chrome.storage.local.get('sb_paused_until');
+  return !!(s.sb_paused_until && Date.now() < s.sb_paused_until);
+}
+
 async function readCache() {
   const store = await chrome.storage.local.get('sb_cache');
   return store.sb_cache || {};
@@ -173,6 +180,16 @@ async function scanOrigin(origin) {
       severity: p.severity,
       note: p.simple_description || p.description
     })),
+    terms: data.terms_privacy
+      ? {
+          summary: data.terms_privacy.simple_summary || data.terms_privacy.summary,
+          points: (data.terms_privacy.points || []).slice(0, 2).map((p) => ({
+            title: p.title,
+            severity: p.severity,
+            note: p.simple_description || p.description
+          }))
+        }
+      : null,
     reportId: data.reportId,
     scannedAt: Date.now()
   };
@@ -209,6 +226,7 @@ function consumeAllow(origin) {
 async function handleCheck(url, sender) {
   const origin = originOf(url);
   if (!origin) return { status: 'pass' }; // not a checkable website — let it through
+  if (await isPaused()) return { status: 'pass' }; // paused until a chosen time — let everything through
   if (isGoogleSearch(url)) return { status: 'pass' }; // Google Search pages are never checked
   if (isTrusted(url)) return { status: 'pass' }; // well-known safe domain — no scan needed
   if (await isWhitelisted(origin)) return { status: 'pass' }; // user whitelisted this site
@@ -238,6 +256,7 @@ async function handleCheck(url, sender) {
 async function handleGate(msg, sender) {
   const origin = originOf(msg.url);
   if (!origin) return { status: 'pass' };
+  if (await isPaused()) return { status: 'pass' }; // paused until a chosen time — let everything through
   if (origin === APP_ORIGIN) return { status: 'pass' }; // never gate our own app
   if (msg.navType === 'reload' || msg.navType === 'back_forward' || msg.navType === 'prerender') {
     return { status: 'pass' };
