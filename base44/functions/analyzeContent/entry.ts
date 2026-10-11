@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { creditFreezeActive, creditFreezeResponse } from '../../shared/creditFreeze.ts';
 
 // How a scan flows through this function:
 //   1. validate the input
@@ -72,9 +71,6 @@ export default async function(req) {
     } else if (!content) {
       return Response.json({ error: 'Content is required' }, { status: 400 });
     }
-    // Credit freeze for all non-URL inputs (URL scans are guarded below, after the cache check)
-    if (inputType !== 'url' && creditFreezeActive()) return creditFreezeResponse();
-
     let analysisContent = content;
     let policySection = '';
     let url = '';
@@ -119,8 +115,6 @@ export default async function(req) {
           cached: true
         });
       }
-      // Credit freeze: block new scans (cached results above still serve for free)
-      if (creditFreezeActive()) return creditFreezeResponse();
       try {
         const resp = await fetch(u, {
           headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' },

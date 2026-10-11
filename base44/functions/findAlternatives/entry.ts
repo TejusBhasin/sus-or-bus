@@ -1,9 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { creditFreezeActive, creditFreezeResponse } from '../../shared/creditFreeze.ts';
 
 export default async function(req: Request): Promise<Response> {
   try {
-    if (creditFreezeActive()) return creditFreezeResponse();
     const body = await req.json().catch(() => ({}));
     const url = typeof body?.url === 'string' ? body.url.trim() : '';
     if (!url || url.length > 500) {
