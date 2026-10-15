@@ -20,6 +20,7 @@ import NerdModeToggle from '@/components/susbus/NerdModeToggle';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
 import AnalyzingLoader from '@/components/susbus/AnalyzingLoader';
+import SiteOwnerFixPrompt from '@/components/susbus/SiteOwnerFixPrompt';
 import { analyzeContent } from '@/functions/analyzeContent';
 import { setPendingReport, getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
 
@@ -449,6 +450,11 @@ export default function Report() {
             )}
           </div>
         )}
+
+        {/* Site owner: fix-it prompt */}
+        <div className="mt-6">
+          <SiteOwnerFixPrompt report={report} />
+        </div>
       </div>
 
       <div className="relative max-w-2xl mx-auto px-5 w-full pb-safe">

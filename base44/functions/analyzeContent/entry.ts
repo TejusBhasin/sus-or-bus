@@ -87,6 +87,69 @@ export default async function(req) {
         u = p.origin + (p.pathname && p.pathname !== '/' ? p.pathname : '') + p.search + p.hash;
       } catch {}
       url = u;
+      // VIPAUTH: websites the owner has manually verified. These always come
+      // back BUS at 95+ with all-good findings — no fetch, scan or credits.
+      let origin = '';
+      try { origin = new URL(u).origin; } catch {}
+      if (origin) {
+        const vip = await base44.asServiceRole.entities.VIPAuth.filter(
+          { url: origin },
+          '-created_date',
+          1
+        );
+        if (vip && vip[0]) {
+          const vipResult = {
+            verdict: 'bus',
+            score: 96,
+            summary: 'Domain is on the VIPAUTH manually-verified list, vetted by the Sus or Bus team; no risk indicators on record.',
+            simple_summary: 'The Sus or Bus team has personally checked and approved this website as safe.',
+            points: [
+              { title: 'VIPAUTH verified', severity: 'good', category: 'reputation', description: origin + ' is on the VIPAUTH list, which is manually curated and verified by the Sus or Bus team.', simple_description: 'The team behind Sus or Bus has personally approved this site.' },
+              { title: 'No risk indicators', severity: 'good', category: 'security', description: 'No phishing, malware, or suspicious-content indicators are on record for this domain.', simple_description: 'Nothing about this site looked dangerous when it was reviewed.' },
+              { title: 'Vetted for visitors', severity: 'good', category: 'content', description: 'The site passed the owner manual review for safety, privacy, and trustworthiness.', simple_description: 'This site was checked and found good for normal browsing.' }
+            ],
+            details: {
+              title: '',
+              description: '',
+              dataCollected: [],
+              trackers: [],
+              technologies: [],
+              redFlags: [],
+              greenFlags: ['VIPAUTH manually verified by the Sus or Bus team', 'No risk indicators on record'],
+              codeNotes: '',
+              simple_code_notes: ''
+            }
+          };
+          const vipReport = await base44.asServiceRole.entities.Report.create({
+            input_type: 'url',
+            input_content: u,
+            url: u,
+            verdict: vipResult.verdict,
+            score: vipResult.score,
+            summary: vipResult.summary,
+            simple_summary: vipResult.simple_summary,
+            points: vipResult.points,
+            details: vipResult.details,
+            preview_title: '',
+            preview_description: '',
+            source_code: '',
+            terms_privacy: null
+          });
+          return Response.json({
+            verdict: vipResult.verdict,
+            score: vipResult.score,
+            summary: vipResult.summary,
+            simple_summary: vipResult.simple_summary,
+            points: vipResult.points,
+            details: vipResult.details,
+            preview: { title: '', description: '', status: null, finalUrl: u, fetchError: '' },
+            sourceCode: '',
+            terms_privacy: null,
+            reportId: vipReport.id,
+            vipVerified: true
+          });
+        }
+      }
       // Shared cache: if anyone scanned this exact site in the last 7 days,
       // reuse that report instead of spending a new LLM call.
       const recent = await base44.asServiceRole.entities.Report.filter(

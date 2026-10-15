@@ -4,9 +4,11 @@ import {
   AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction
 } from '@/components/ui/alert-dialog';
-import { Trash2, CheckCircle2 } from 'lucide-react';
+import { Trash2, CheckCircle2, History as HistoryIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
+import VipAuthManager from '@/components/susbus/VipAuthManager';
 
 export default function Settings() {
   const [localCleared, setLocalCleared] = useState(false);
@@ -61,6 +63,21 @@ export default function Settings() {
             </AlertDialog>
           )}
         </div>
+
+        <div className="mt-6 rounded-2xl border border-border bg-card/60 p-6">
+          <p className="text-sm font-semibold text-foreground">Report history</p>
+          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+            See every saved verdict and safety score, or download them all as a CSV file to review outside the app.
+          </p>
+          <Link to="/history">
+            <Button variant="outline" className="mt-4 bg-card/60 border-border text-foreground hover:bg-secondary">
+              <HistoryIcon className="w-4 h-4 mr-2" />
+              Open report history
+            </Button>
+          </Link>
+        </div>
+
+        <VipAuthManager />
 
         <Footer />
       </div>

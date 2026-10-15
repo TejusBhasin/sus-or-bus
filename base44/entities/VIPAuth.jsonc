@@ -1,0 +1,35 @@
+{
+  "name": "VIPAuth",
+  "type": "object",
+  "properties": {
+    "url": {
+      "type": "string",
+      "description": "Website origin (e.g. https://example.com) that always returns a verified BUS verdict at 95+"
+    }
+  },
+  "required": [
+    "url"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
