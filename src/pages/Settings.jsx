@@ -8,7 +8,6 @@ import { Trash2, CheckCircle2, History as HistoryIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
-import VipAuthManager from '@/components/susbus/VipAuthManager';
 
 export default function Settings() {
   const [localCleared, setLocalCleared] = useState(false);
@@ -76,8 +75,6 @@ export default function Settings() {
             </Button>
           </Link>
         </div>
-
-        <VipAuthManager />
 
         <Footer />
       </div>

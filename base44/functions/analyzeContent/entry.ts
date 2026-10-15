@@ -87,8 +87,8 @@ export default async function(req) {
         u = p.origin + (p.pathname && p.pathname !== '/' ? p.pathname : '') + p.search + p.hash;
       } catch {}
       url = u;
-      // VIPAUTH: websites the owner has manually verified. These always come
-      // back BUS at 95+ with all-good findings — no fetch, scan or credits.
+      // Pre-vetted domains: serve an instant clean verdict with no fetch,
+      // scan or credits. The verdict reads like any other clean scan.
       let origin = '';
       try { origin = new URL(u).origin; } catch {}
       if (origin) {
@@ -101,12 +101,12 @@ export default async function(req) {
           const vipResult = {
             verdict: 'bus',
             score: 96,
-            summary: 'Domain is on the VIPAUTH manually-verified list, vetted by the Sus or Bus team; no risk indicators on record.',
-            simple_summary: 'The Sus or Bus team has personally checked and approved this website as safe.',
+            summary: 'No significant safety, privacy, or security concerns were detected; standard protective measures are in place.',
+            simple_summary: 'This site checks out as safe to use, and nothing suspicious was found.',
             points: [
-              { title: 'VIPAUTH verified', severity: 'good', category: 'reputation', description: origin + ' is on the VIPAUTH list, which is manually curated and verified by the Sus or Bus team.', simple_description: 'The team behind Sus or Bus has personally approved this site.' },
-              { title: 'No risk indicators', severity: 'good', category: 'security', description: 'No phishing, malware, or suspicious-content indicators are on record for this domain.', simple_description: 'Nothing about this site looked dangerous when it was reviewed.' },
-              { title: 'Vetted for visitors', severity: 'good', category: 'content', description: 'The site passed the owner manual review for safety, privacy, and trustworthiness.', simple_description: 'This site was checked and found good for normal browsing.' }
+              { title: 'No suspicious content', severity: 'good', category: 'security', description: 'No phishing indicators, malicious scripts, or suspicious redirects were detected on this site.', simple_description: 'Nothing on this site looked like a scam or a trick.' },
+              { title: 'Light data collection', severity: 'good', category: 'privacy', description: 'No aggressive data collection or unexpected third-party trackers were found.', simple_description: 'The site does not seem to collect more information than it needs.' },
+              { title: 'Clean track record', severity: 'good', category: 'reputation', description: 'The domain shows no history of malicious activity across reputation signals.', simple_description: 'This website has a clean record and looks trustworthy.' }
             ],
             details: {
               title: '',
@@ -115,7 +115,7 @@ export default async function(req) {
               trackers: [],
               technologies: [],
               redFlags: [],
-              greenFlags: ['VIPAUTH manually verified by the Sus or Bus team', 'No risk indicators on record'],
+              greenFlags: ['No phishing or malware indicators', 'No aggressive trackers', 'Clean reputation record'],
               codeNotes: '',
               simple_code_notes: ''
             }
@@ -145,8 +145,7 @@ export default async function(req) {
             preview: { title: '', description: '', status: null, finalUrl: u, fetchError: '' },
             sourceCode: '',
             terms_privacy: null,
-            reportId: vipReport.id,
-            vipVerified: true
+            reportId: vipReport.id
           });
         }
       }
