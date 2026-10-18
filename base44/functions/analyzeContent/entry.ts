@@ -1,56 +1,46 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { normalizeUrl, safeFetch } from '../../shared/urlSafety.ts';
+import {
+  findPolicyLinks,
+  analyzeDomain,
+  analyzeHeaders,
+  analyzeHtml,
+  analyzePolicyText,
+  mergeTermsPrivacy,
+  policyMainFindings,
+  analyzeTextContent,
+  analyzeCode,
+  scoreFindings,
+  buildSummaries
+} from '../../shared/scanEngine.ts';
 
-// How a scan flows through this function:
-//   1. validate the input
-//   2. for URLs: normalize it, serve a cached report if we have a fresh one,
-//      otherwise fetch the page HTML
-//   3. send the content to the LLM and get a structured verdict back
-//   4. save it as a Report and return it to the caller
+// How a scan flows through this function (fully deterministic, no AI):
+//   1. validate the input (URLs go through the SSRF-safe normalizer)
+//   2. for URLs: serve a cached report if we have a fresh one, otherwise
+//      fetch the page (every redirect hop re-validated, byte-capped)
+//   3. run the rule-based engine: address, headers, static HTML, and the
+//      site's own terms / privacy policy pages
+//   4. score the findings with the fixed penalty model and save the report
 
-const FETCH_TIMEOUT_MS = 15000;
-const MAX_HTML = 50000;
-const MAX_ANALYSIS = 40000;
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PAGE_MAX_BYTES = 50000;
+const POLICY_MAX_BYTES = 15000;
 
-function extractMeta(html, attr, key) {
-  const re = new RegExp(`<meta[^>]*${attr}=["']${key}["'][^>]*content=["']([^"']*)["']`, 'i');
-  const m = html.match(re);
-  return m ? m[1].trim() : '';
-}
+const VALID_INPUT_TYPES = ['url', 'html', 'code', 'email', 'text', 'terms', 'document'];
+const TEXTUAL_CONTENT_RE = /text\/|json|csv|markdown|xml/i;
 
-// Terms & privacy policy check — find links to the site's own terms /
-// privacy policy pages inside its homepage HTML.
-function findPolicyLinks(html, baseUrl) {
-  const found = { terms: '', privacy: '' };
-  let baseHost = '';
-  try { baseHost = new URL(baseUrl).host; } catch { return found; }
-  const re = /<a[^>]+href=["']([^"'#]+)["'][^>]*>([\s\S]{0,150}?)<\/a>/gi;
-  let m;
-  while ((m = re.exec(html)) && (!found.terms || !found.privacy)) {
-    const href = m[1];
-    const text = (m[2] || '').replace(/<[^>]*>/g, ' ').toLowerCase();
-    if (/^(mailto:|tel:|javascript:)/i.test(href)) continue;
-    let abs;
-    try { abs = new URL(href, baseUrl).toString(); } catch { continue; }
-    try { if (new URL(abs).host !== baseHost) continue; } catch { continue; }
-    const hay = abs.toLowerCase() + ' ' + text;
-    if (!found.terms && /(terms|conditions|tos\b|legal)/.test(hay)) found.terms = abs;
-    else if (!found.privacy && /(privacy|datenschutz|confidentialit)/.test(hay)) found.privacy = abs;
-  }
-  return found;
-}
-
-async function fetchPolicyText(url) {
-  try {
-    const resp = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' },
-      redirect: 'follow',
-      signal: AbortSignal.timeout(8000)
-    });
-    const html = await resp.text();
-    return html.slice(0, 15000);
-  } catch {
-    return '';
-  }
+function emptyDetails() {
+  return {
+    title: '',
+    description: '',
+    dataCollected: [],
+    trackers: [],
+    technologies: [],
+    redFlags: [],
+    greenFlags: [],
+    codeNotes: '',
+    simple_code_notes: ''
+  };
 }
 
 export default async function(req) {
@@ -63,7 +53,7 @@ export default async function(req) {
     const fileUrl = (body.fileUrl || '').trim();
     const fileName = (body.fileName || '').trim();
 
-    if (!['url', 'html', 'code', 'email', 'text', 'terms', 'document'].includes(inputType)) {
+    if (!VALID_INPUT_TYPES.includes(inputType)) {
       return Response.json({ error: 'Invalid input type' }, { status: 400 });
     }
     if (inputType === 'document') {
@@ -71,93 +61,82 @@ export default async function(req) {
     } else if (!content) {
       return Response.json({ error: 'Content is required' }, { status: 400 });
     }
-    let analysisContent = content;
-    let policySection = '';
-    let url = '';
-    let pageHtml = '';
-    let sourceCode = '';
+
+    const findings = [];
+    const details = emptyDetails();
     const preview = { title: '', description: '', status: null, finalUrl: '', fetchError: '' };
+    let sourceCode = '';
+    let termsPrivacy = null;
+    let url = '';
 
     if (inputType === 'url') {
-      let u = content;
-      if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
-      try {
-        const p = new URL(u);
-        p.host = p.host.toLowerCase(); // normalize so shared-cache lookups always match
-        u = p.origin + (p.pathname && p.pathname !== '/' ? p.pathname : '') + p.search + p.hash;
-      } catch {}
-      url = u;
+      const norm = normalizeUrl(content);
+      if (!norm.ok) {
+        return Response.json({ error: norm.error }, { status: 400 });
+      }
+      url = norm.url;
+      preview.finalUrl = norm.url;
+
       // Pre-vetted domains: serve an instant clean verdict with no fetch,
       // scan or credits. The verdict reads like any other clean scan.
-      let origin = '';
-      try { origin = new URL(u).origin; } catch {}
-      if (origin) {
-        const vip = await base44.asServiceRole.entities.VIPAuth.filter(
-          { url: origin },
-          '-created_date',
-          1
-        );
-        if (vip && vip[0]) {
-          const vipResult = {
-            verdict: 'bus',
-            score: 96,
-            summary: 'No significant safety, privacy, or security concerns were detected; standard protective measures are in place.',
-            simple_summary: 'This site checks out as safe to use, and nothing suspicious was found.',
-            points: [
-              { title: 'No suspicious content', severity: 'good', category: 'security', description: 'No phishing indicators, malicious scripts, or suspicious redirects were detected on this site.', simple_description: 'Nothing on this site looked like a scam or a trick.' },
-              { title: 'Light data collection', severity: 'good', category: 'privacy', description: 'No aggressive data collection or unexpected third-party trackers were found.', simple_description: 'The site does not seem to collect more information than it needs.' },
-              { title: 'Clean track record', severity: 'good', category: 'reputation', description: 'The domain shows no history of malicious activity across reputation signals.', simple_description: 'This website has a clean record and looks trustworthy.' }
-            ],
-            details: {
-              title: '',
-              description: '',
-              dataCollected: [],
-              trackers: [],
-              technologies: [],
-              redFlags: [],
-              greenFlags: ['No phishing or malware indicators', 'No aggressive trackers', 'Clean reputation record'],
-              codeNotes: '',
-              simple_code_notes: ''
-            }
-          };
-          const vipReport = await base44.asServiceRole.entities.Report.create({
-            input_type: 'url',
-            input_content: u,
-            url: u,
-            verdict: vipResult.verdict,
-            score: vipResult.score,
-            summary: vipResult.summary,
-            simple_summary: vipResult.simple_summary,
-            points: vipResult.points,
-            details: vipResult.details,
-            preview_title: '',
-            preview_description: '',
-            source_code: '',
-            terms_privacy: null
-          });
-          return Response.json({
-            verdict: vipResult.verdict,
-            score: vipResult.score,
-            summary: vipResult.summary,
-            simple_summary: vipResult.simple_summary,
-            points: vipResult.points,
-            details: vipResult.details,
-            preview: { title: '', description: '', status: null, finalUrl: u, fetchError: '' },
-            sourceCode: '',
-            terms_privacy: null,
-            reportId: vipReport.id
-          });
-        }
+      const vip = await base44.asServiceRole.entities.VIPAuth.filter({ url: norm.origin }, '-created_date', 1);
+      if (vip && vip[0]) {
+        const vipResult = {
+          verdict: 'bus',
+          score: 96,
+          summary: 'No significant safety, privacy, or security concerns were detected; standard protective measures are in place.',
+          simple_summary: 'This site checks out as safe to use, and nothing suspicious was found.',
+          points: [
+            { title: 'No suspicious content', severity: 'good', category: 'security', description: 'No phishing indicators, malicious scripts, or suspicious redirects were detected on this site.', simple_description: 'Nothing on this site looked like a scam or a trick.' },
+            { title: 'Light data collection', severity: 'good', category: 'privacy', description: 'No aggressive data collection or unexpected third-party trackers were found.', simple_description: 'The site does not seem to collect more information than it needs.' },
+            { title: 'Clean track record', severity: 'good', category: 'reputation', description: 'The domain shows no history of malicious activity across reputation signals.', simple_description: 'This website has a clean record and looks trustworthy.' }
+          ],
+          details: {
+            title: '',
+            description: '',
+            dataCollected: [],
+            trackers: [],
+            technologies: [],
+            redFlags: [],
+            greenFlags: ['No phishing or malware indicators', 'No aggressive trackers', 'Clean reputation record'],
+            codeNotes: '',
+            simple_code_notes: ''
+          }
+        };
+        const vipReport = await base44.asServiceRole.entities.Report.create({
+          input_type: 'url',
+          input_content: url,
+          url,
+          verdict: vipResult.verdict,
+          score: vipResult.score,
+          summary: vipResult.summary,
+          simple_summary: vipResult.simple_summary,
+          points: vipResult.points,
+          details: vipResult.details,
+          preview_title: '',
+          preview_description: '',
+          source_code: '',
+          terms_privacy: null
+        });
+        return Response.json({
+          verdict: vipResult.verdict,
+          score: vipResult.score,
+          summary: vipResult.summary,
+          simple_summary: vipResult.simple_summary,
+          points: vipResult.points,
+          details: vipResult.details,
+          preview: { title: '', description: '', status: null, finalUrl: url, fetchError: '' },
+          sourceCode: '',
+          terms_privacy: null,
+          reportId: vipReport.id
+        });
       }
+
       // Shared cache: if anyone scanned this exact site in the last 7 days,
-      // reuse that report instead of spending a new LLM call.
-      const recent = await base44.asServiceRole.entities.Report.filter(
-        { input_type: 'url', url: u },
-        '-created_date',
-        1
-      );
+      // reuse that report instead of re-running the engine.
+      const recent = await base44.asServiceRole.entities.Report.filter({ input_type: 'url', url }, '-created_date', 1);
       const prev = recent && recent[0];
-      if (prev && Date.now() - new Date(prev.created_date).getTime() < 7 * 24 * 60 * 60 * 1000) {
+      if (prev && Date.now() - new Date(prev.created_date).getTime() < CACHE_TTL_MS) {
         return Response.json({
           verdict: prev.verdict,
           score: prev.score,
@@ -168,7 +147,7 @@ export default async function(req) {
             title: prev.preview_title || '',
             description: prev.preview_description || '',
             status: null,
-            finalUrl: u,
+            finalUrl: url,
             fetchError: ''
           },
           sourceCode: prev.source_code || '',
@@ -177,159 +156,134 @@ export default async function(req) {
           cached: true
         });
       }
-      try {
-        const resp = await fetch(u, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36' },
-          redirect: 'follow',
-          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
-        });
-        const html = await resp.text();
-        pageHtml = html;
-        analysisContent = html.slice(0, MAX_HTML);
-        sourceCode = html.slice(0, 20000);
-        const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
-        preview.title = titleMatch ? titleMatch[1].trim() : '';
-        preview.description = extractMeta(html, 'name', 'description') || extractMeta(html, 'property', 'og:description');
-        preview.status = resp.status;
-        preview.finalUrl = resp.url;
-      } catch (e) {
-        preview.fetchError = e.message;
-      }
-      // Fetch the site's own terms & conditions and privacy policy pages so
-      // the LLM can tell the user what those documents really say.
-      try {
-        const links = findPolicyLinks(pageHtml, u);
-        const [termsText, privacyText] = await Promise.all([
-          links.terms ? fetchPolicyText(links.terms) : Promise.resolve(''),
-          links.privacy ? fetchPolicyText(links.privacy) : Promise.resolve('')
-        ]);
-        if (termsText) policySection += `\n----- SITE TERMS & CONDITIONS (excerpt) -----\n${termsText}\n`;
-        if (privacyText) policySection += `\n----- SITE PRIVACY POLICY (excerpt) -----\n${privacyText}\n`;
-      } catch {}
-    }
 
-    let documentNote = '';
-    if (inputType === 'document') {
-      documentNote = `The user uploaded a document named "${fileName || 'document'}". Read the attached document file carefully and base your analysis on its actual contents.`;
-      analysisContent = 'The document is provided as an attached file.';
-      preview.title = fileName || 'Uploaded document';
-    }
+      // --- fetch the page (SSRF-safe, redirect-validated, byte-capped) ---
+      const fetchResult = await safeFetch(url, { maxBytes: PAGE_MAX_BYTES, timeoutMs: 15000 });
+      let pageHtml = '';
+      let isHttps = norm.protocol === 'https:';
+      let htmlAnalysis = null;
+      let foundPolicyLinks = false;
 
-    const prompt = `You are "Sus or Bus", a sharp web-safety analyzer. Slang: "Bus" (short for "bussin") means really good / safe / legit. "Sus" means suspicious / sketchy / unsafe.
-
-Analyze the following ${inputType === 'document' ? 'DOCUMENT (see the attached file)' : inputType.toUpperCase()} input for safety, privacy, security, and trustworthiness.
-
-${documentNote}
-
------ INPUT START -----
-${analysisContent.slice(0, MAX_ANALYSIS)}
------ INPUT END -----
-${policySection}
-
-Produce a rigorous but fair assessment. Look for: data collection & privacy practices, third-party trackers, suspicious scripts, phishing/social-engineering signals, misleading content, code safety, reputation signals, and (for emails) spoofing/urgency/red flags. For documents, also inspect: suspicious links, requests for sensitive information or payments, scam patterns, malicious instructions, and the legitimacy of the sender's claims.
-
-Return a JSON object with EXACTLY this shape:
-{
-  "verdict": "bus" or "sus",
-  "score": number 0-100 (100 = very safe),
-  "summary": "one punchy sentence: a TECHNICAL explanation for security-savvy users (may use terms like XSS, CSP, obfuscation, etc.)",
-  "simple_summary": "one sentence in plain everyday language anyone can understand (no jargon, explain like you're talking to your grandma)",
-  "points": [
-    { "title": "short label", "severity": "good" | "warning" | "bad", "category": "privacy" | "security" | "trackers" | "content" | "code" | "email" | "reputation", "description": "1-2 sentence TECHNICAL explanation", "simple_description": "1-2 sentence plain-language explanation anyone can understand (no jargon)" }
-  ],
-  "details": {
-    "title": "page/site/document title if known, else empty string",
-    "description": "site/page/document description if known, else empty string",
-    "dataCollected": ["data types collected, if any"],
-    "trackers": ["tracking/analytics services found, if any"],
-    "technologies": ["technologies/frameworks detected, if any"],
-    "redFlags": ["specific concerns"],
-    "greenFlags": ["specific positives"],
-    "codeNotes": "TECHNICAL notes about any code/html analyzed, or empty string",
-    "simple_code_notes": "plain-language version of the code notes (what it means in everyday terms), or empty string"
-  },
-  "terms_privacy": {
-    "found": ["which policy documents you actually saw: 'terms' and/or 'privacy'; empty array if none"],
-    "summary": "one TECHNICAL sentence about what the site's terms & privacy policy actually mean for the user — warn about one-sided clauses, surprise charges, auto-renewals, broad data sharing or vague deletion rights; give genuine encouragement when the policies are user-friendly. Empty string if no policies were seen.",
-    "simple_summary": "plain-language version of the same sentence (explain like you're talking to your grandma), or empty string",
-    "points": [
-      { "title": "short label", "severity": "good" | "warning" | "bad", "description": "1-2 sentence TECHNICAL explanation of one policy point", "simple_description": "1-2 sentence plain-language explanation anyone can understand" }
-    ]
-  }
-}
-
-Rules:
-- Give 5 to 8 points covering different angles.
-- Score guide: 75-100 = clearly bus, 60-74 = leans bus, 45-59 = leans sus, below 45 = clearly sus. Set "verdict" to match the lean.
-- Be concrete: cite what you actually saw in the input. Never invent facts not supported by the input.
-- The "simple_*" fields must convey the SAME meaning as their technical counterparts but in plain language a non-technical person understands. Never contradict the technical version.
-- Fill "terms_privacy" ONLY from the SITE POLICY excerpts (terms & conditions / privacy policy). Give 1 to 4 points about the policies themselves: what data they collect and share, one-sided clauses, surprise charges, auto-renewals, account deletion rights, etc. If no policy excerpts were provided, use found: [], empty summaries and empty points.
-${inputType === 'terms' ? "- This input IS a terms / privacy policy document. Base \"terms_privacy\" on the input itself, and make your main points about what the policy means for the user." : ''}`;
-
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt,
-      ...(inputType === 'document' ? { file_urls: [fileUrl] } : {}),
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          verdict: { type: 'string', enum: ['bus', 'sus'] },
-          score: { type: 'number' },
-          summary: { type: 'string' },
-          simple_summary: { type: 'string' },
-          points: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                title: { type: 'string' },
-                severity: { type: 'string' },
-                category: { type: 'string' },
-                description: { type: 'string' },
-                simple_description: { type: 'string' }
-              }
-            }
-          },
-          details: {
-            type: 'object',
-            properties: {
-              title: { type: 'string' },
-              description: { type: 'string' },
-              dataCollected: { type: 'array', items: { type: 'string' } },
-              trackers: { type: 'array', items: { type: 'string' } },
-              technologies: { type: 'array', items: { type: 'string' } },
-              redFlags: { type: 'array', items: { type: 'string' } },
-              greenFlags: { type: 'array', items: { type: 'string' } },
-              codeNotes: { type: 'string' },
-              simple_code_notes: { type: 'string' }
-            }
-          },
-          terms_privacy: {
-            type: 'object',
-            properties: {
-              found: { type: 'array', items: { type: 'string' } },
-              summary: { type: 'string' },
-              simple_summary: { type: 'string' },
-              points: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    title: { type: 'string' },
-                    severity: { type: 'string' },
-                    description: { type: 'string' },
-                    simple_description: { type: 'string' }
-                  }
-                }
-              }
-            }
-          }
+      if (fetchResult.ok) {
+        preview.status = fetchResult.status;
+        preview.finalUrl = fetchResult.finalUrl;
+        isHttps = fetchResult.finalUrl.startsWith('https:');
+        if (TEXTUAL_CONTENT_RE.test(fetchResult.contentType) || /html/i.test(fetchResult.contentType)) {
+          pageHtml = fetchResult.text;
+        } else if (fetchResult.contentType) {
+          findings.push({
+            title: 'The address does not return a web page',
+            severity: 'warning',
+            category: 'content',
+            description: `The address returned "${fetchResult.contentType}" instead of an HTML page, so its content could not be analyzed. The verdict rests only on the address and response headers.`,
+            simple_description: 'This address points to a file, not a normal web page, so the scan could only check the address itself.'
+          });
         }
+      } else {
+        preview.fetchError = fetchResult.error;
+        findings.push({
+          title: 'The page itself could not be loaded',
+          severity: 'warning',
+          category: 'security',
+          description: `The scanner could not load this page (${fetchResult.error}), so the verdict is based only on the address itself, not on the site's content.`,
+          simple_description: `The scan could not open this site (${fetchResult.error}), so it only checked the address, not what is on the page.`
+        });
       }
-    });
 
-    if (!sourceCode && (inputType === 'html' || inputType === 'code')) {
+      findings.push(...analyzeDomain(norm.host, isHttps));
+
+      if (pageHtml) {
+        sourceCode = pageHtml.slice(0, 20000);
+        if (fetchResult.ok) findings.push(...analyzeHeaders(fetchResult.headers, isHttps));
+
+        htmlAnalysis = analyzeHtml(pageHtml, fetchResult.finalUrl, isHttps);
+        findings.push(...htmlAnalysis.findings);
+        preview.title = htmlAnalysis.title;
+        preview.description = htmlAnalysis.description;
+        details.title = htmlAnalysis.title;
+        details.description = htmlAnalysis.description;
+        details.dataCollected = htmlAnalysis.dataCollected;
+        details.trackers = htmlAnalysis.trackers;
+        details.technologies = htmlAnalysis.technologies;
+        details.codeNotes = htmlAnalysis.codeNotes;
+        details.simple_code_notes = htmlAnalysis.simpleCodeNotes;
+
+        // --- fetch the site's own terms / privacy pages (bounded, re-validated) ---
+        const links = findPolicyLinks(pageHtml, fetchResult.finalUrl);
+        foundPolicyLinks = !!(links.terms || links.privacy);
+        const [termsFetch, privacyFetch] = await Promise.all([
+          links.terms ? safeFetch(links.terms, { maxBytes: POLICY_MAX_BYTES, timeoutMs: 8000 }) : Promise.resolve(null),
+          links.privacy ? safeFetch(links.privacy, { maxBytes: POLICY_MAX_BYTES, timeoutMs: 8000 }) : Promise.resolve(null)
+        ]);
+        const termsAnalysis = termsFetch && termsFetch.ok ? analyzePolicyText(termsFetch.text, 'terms') : null;
+        const privacyAnalysis = privacyFetch && privacyFetch.ok ? analyzePolicyText(privacyFetch.text, 'privacy') : null;
+        termsPrivacy = mergeTermsPrivacy(termsAnalysis, privacyAnalysis);
+        findings.push(...policyMainFindings(termsPrivacy, foundPolicyLinks));
+      }
+    } else if (inputType === 'html') {
       sourceCode = content.slice(0, 20000);
+      const htmlAnalysis = analyzeHtml(content, '', true);
+      findings.push(...htmlAnalysis.findings);
+      details.title = htmlAnalysis.title;
+      details.description = htmlAnalysis.description;
+      details.dataCollected = htmlAnalysis.dataCollected;
+      details.trackers = htmlAnalysis.trackers;
+      details.technologies = htmlAnalysis.technologies;
+      details.codeNotes = htmlAnalysis.codeNotes;
+      details.simple_code_notes = htmlAnalysis.simpleCodeNotes;
+    } else if (inputType === 'code') {
+      sourceCode = content.slice(0, 20000);
+      const codeAnalysis = analyzeCode(content);
+      findings.push(...codeAnalysis.findings);
+      details.codeNotes = codeAnalysis.codeNotes;
+      details.simple_code_notes = codeAnalysis.simpleCodeNotes;
+    } else if (inputType === 'terms') {
+      // The input IS a policy document: analyze it as one, and let its
+      // points double as the main findings.
+      termsPrivacy = analyzePolicyText(content, 'terms');
+      for (const p of termsPrivacy.points) {
+        findings.push({
+          title: p.title,
+          severity: p.severity,
+          category: 'privacy',
+          description: p.description,
+          simple_description: p.simple_description
+        });
+      }
+    } else if (inputType === 'document') {
+      preview.title = fileName || 'Uploaded document';
+      details.title = preview.title;
+      const docFetch = await safeFetch(fileUrl, { maxBytes: PAGE_MAX_BYTES, timeoutMs: 15000 });
+      if (docFetch.ok && (TEXTUAL_CONTENT_RE.test(docFetch.contentType) || !docFetch.contentType)) {
+        findings.push(...analyzeTextContent(docFetch.text, 'text'));
+      } else {
+        // Honest limitation: binary documents (PDF, images, office files)
+        // cannot be read by the rule engine, so nothing was verified.
+        findings.push({
+          title: 'No automated checks could run on this document',
+          severity: 'bad',
+          category: 'content',
+          description: `The uploaded document ("${fileName}") is in a binary format (${docFetch.ok ? docFetch.contentType || 'unknown' : 'unreachable file'}) the scanner cannot read without an AI reader. Nothing inside it was verified, so treat it as untrusted until a person reviews it.`,
+          simple_description: 'The scan cannot read this kind of file, so nothing inside it was checked. It is not flagged as dangerous, it is simply unverified.'
+        });
+        findings.push({
+          title: 'Document content unavailable to the checks',
+          severity: 'warning',
+          category: 'content',
+          description: 'Because the document could not be read, no links, payment requests, or instructions inside it were analyzed.',
+          simple_description: 'Because the scan could not open the file, it could not look for links or tricks inside it.'
+        });
+      }
+    } else {
+      // 'text' and 'email'
+      findings.push(...analyzeTextContent(content, inputType));
     }
+
+    // --- score, summarize, save ---
+    const result = scoreFindings(findings);
+    const summaries = buildSummaries(result.points, result.verdict);
+    details.redFlags = result.redFlags;
+    details.greenFlags = result.greenFlags;
 
     const report = await base44.asServiceRole.entities.Report.create({
       input_type: inputType,
@@ -337,28 +291,26 @@ ${inputType === 'terms' ? "- This input IS a terms / privacy policy document. Ba
       url: inputType === 'document' ? fileUrl : url,
       verdict: result.verdict,
       score: result.score,
-      summary: result.summary,
-      simple_summary: result.simple_summary || result.summary,
-      points: result.points || [],
-      details: {
-        ...(result.details || {}),
-        simple_code_notes: (result.details && result.details.simple_code_notes) || (result.details && result.details.codeNotes) || ''
-      },
-      preview_title: preview.title || (result.details && result.details.title) || '',
-      preview_description: preview.description || (result.details && result.details.description) || '',
+      summary: summaries.summary,
+      simple_summary: summaries.simpleSummary,
+      points: result.points,
+      details,
+      preview_title: preview.title,
+      preview_description: preview.description,
       source_code: sourceCode,
-      terms_privacy: result.terms_privacy || null
+      terms_privacy: termsPrivacy
     });
 
     return Response.json({
       verdict: result.verdict,
       score: result.score,
-      summary: result.summary,
-      points: result.points || [],
-      details: result.details || {},
+      summary: summaries.summary,
+      simple_summary: summaries.simpleSummary,
+      points: result.points,
+      details,
       preview,
-      sourceCode,
-      terms_privacy: result.terms_privacy || null,
+      sourceCode: sourceCode,
+      terms_privacy: termsPrivacy,
       reportId: report.id
     });
   } catch (error) {
