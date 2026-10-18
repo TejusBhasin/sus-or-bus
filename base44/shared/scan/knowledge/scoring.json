@@ -1,0 +1,41 @@
+{
+  "version": "2.5.0",
+  "baseScore": 100,
+  "minScore": 0,
+  "maxScore": 100,
+  "severityWeights": {
+    "critical": 40,
+    "high": 25,
+    "medium": 12,
+    "low": 5,
+    "informational": 0
+  },
+  "confidenceMultipliers": {
+    "high": 1.0,
+    "medium": 0.75,
+    "low": 0.5
+  },
+  "thresholds": {
+    "busMin": 70,
+    "mildlySusMin": 40
+  },
+  "findingWeights": {
+    "SEC_FORM_PASSWORD_CROSS_ORIGIN": 47,
+    "SEC_CONTENT_SCAM_KEYWORDS": 41,
+    "SEC_SCRIPT_OBFUSCATION": 37,
+    "SEC_TRANSPORT_HTTP_INSECURE": 33,
+    "SEC_REDIRECT_META_REFRESH": 16,
+    "POL_POLICY_NONE_FOUND": 14,
+    "SEC_HEADER_HSTS_MISSING": 9,
+    "POL_TRACKER_DISCLOSURE_GAP": 8,
+    "SEC_HEADER_CSP_MISSING": 7,
+    "SEC_IFRAME_THIRD_PARTY": 6,
+    "SEC_HEADER_HSTS_SHORT": 4,
+    "SEC_HEADER_VERSION_DISCLOSURE": 3,
+    "CODE_BROWSER_CONSOLE_ERRORS": 4
+  },
+  "limits": {
+    "maxDeductionPerCategory": 60
+  }
+}
+

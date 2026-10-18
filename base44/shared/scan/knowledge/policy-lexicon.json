@@ -1,0 +1,60 @@
+{
+  "version": "2.5.0",
+  "disclosureCategories": {
+    "dataCollection": {
+      "affirmativePatterns": [
+        "\\b(?:we\\s+collect|information\\s+we\\s+collect|personal\\s+data\\s+collected|personal\\s+information\\s+we\\s+gather|types\\s+of\\s+data\\s+we\\s+collect)\\b",
+        "\\b(?:name,\\s*email|billing\\s+address|phone\\s+number|device\\s+identifiers|ip\\s+address)\\b"
+      ],
+      "negativePatterns": [
+        "\\b(?:we\\s+do\\s+not\\s+collect\\s+any\\s+personal|we\\s+never\\s+collect\\s+personal\\s+information)\\b"
+      ]
+    },
+    "cookies": {
+      "affirmativePatterns": [
+        "\\b(?:cookies|web\\s+beacons|tracking\\s+pixels|local\\s+storage\\s+technologies)\\b",
+        "\\b(?:session\\s+cookies|persistent\\s+cookies|third-party\\s+cookies)\\b"
+      ],
+      "negativePatterns": [
+        "\\b(?:we\\s+do\\s+not\\s+use\\s+cookies|this\\s+site\\s+does\\s+not\\s+use\\s+tracking\\s+cookies|cookie-free)\\b"
+      ]
+    },
+    "thirdPartySharing": {
+      "affirmativePatterns": [
+        "\\b(?:share\\s+(?:(?:your\\s+)?(?:personal\\s+)?(?:data|information)\\s+)?with\\s+third\\s+parties|disclose\\s+to\\s+(?:our\\s+)?partners|(?:share|shared)\\s+with\\s+service\\s+providers)\\b",
+        "\\b(?:advertising\\s+partners|analytics\\s+providers|third-party\\s+vendors)\\b"
+      ],
+      "negativePatterns": [
+        "\\b(?:we\\s+do\\s+not\\s+share\\s+(?:your\\s+)?personal\\s+information\\s+with\\s+third\\s+parties|we\\s+never\\s+disclose\\s+your\\s+data\\s+to\\s+third\\s+parties)\\b"
+      ]
+    },
+    "dataSelling": {
+      "affirmativePatterns": [
+        "\\b(?:we\\s+sell\\s+(?:your\\s+)?personal\\s+(?:information|data)|share\\s+data\\s+for\\s+monetary\\s+consideration)\\b"
+      ],
+      "negativePatterns": [
+        "\\b(?:we\\s+do\\s+not\\s+sell\\s+(?:your\\s+)?personal\\s+(?:information|data)|we\\s+never\\s+sell\\s+(?:or\\s+rent\\s+)?(?:your\\s+)?(?:data|information)|we\\s+have\\s+not\\s+sold\\s+any\\s+personal\\s+information)\\b",
+        "\\b(?:do\\s+not\\s+sell\\s+my\\s+personal\\s+information|we\\s+do\\s+not\\s+monetize\\s+user\\s+data)\\b"
+      ]
+    },
+    "deletionRights": {
+      "affirmativePatterns": [
+        "\\b(?:right\\s+to\\s+(?:request\\s+)?deletion|delete\\s+your\\s+account|right\\s+to\\s+erasure|request\\s+to\\s+delete)\\b",
+        "\\b(?:gdpr|ccpa|california\\s+consumer\\s+privacy|cpra|opt-out\\s+rights)\\b"
+      ],
+      "negativePatterns": []
+    },
+    "retention": {
+      "affirmativePatterns": [
+        "\\b(?:data\\s+retention|how\\s+long\\s+we\\s+retain|retention\\s+period|retain\\s+your\\s+information\\s+for)\\b"
+      ],
+      "negativePatterns": []
+    },
+    "contact": {
+      "affirmativePatterns": [
+        "\\b(?:privacy@|dpo@|data\\s+protection\\s+officer|contact\\s+our\\s+privacy\\s+team)\\b"
+      ],
+      "negativePatterns": []
+    }
+  }
+}

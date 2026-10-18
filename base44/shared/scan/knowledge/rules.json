@@ -1,0 +1,276 @@
+{
+  "version": "2.5.0",
+  "rules": [
+    {
+      "id": "RULE_TRANSPORT_HTTPS",
+      "stage": "network",
+      "category": "security",
+      "description": "Checks if final response URL uses TLS encryption (HTTPS)",
+      "conditions": { "protocolEquals": "https:" },
+      "outputFindingId": "SEC_TRANSPORT_HTTPS",
+      "evidenceFields": ["finalUrl"]
+    },
+    {
+      "id": "RULE_TRANSPORT_HTTP_INSECURE",
+      "stage": "network",
+      "category": "security",
+      "description": "Flags plain unencrypted HTTP transport",
+      "conditions": { "protocolEquals": "http:" },
+      "outputFindingId": "SEC_TRANSPORT_HTTP_INSECURE",
+      "evidenceFields": ["finalUrl"]
+    },
+    {
+      "id": "RULE_FORM_PASSWORD_CROSS_ORIGIN",
+      "stage": "static_html",
+      "category": "security",
+      "description": "Flags password input submitted cross-origin or over plain HTTP",
+      "conditions": {
+        "hasInsecureOrCrossOriginPasswordForm": true
+      },
+      "outputFindingId": "SEC_FORM_PASSWORD_CROSS_ORIGIN",
+      "evidenceFields": ["action", "destinationDetail"]
+    },
+    {
+      "id": "RULE_FORM_PASSWORD_SAME_ORIGIN",
+      "stage": "static_html",
+      "category": "security",
+      "description": "Identifies presence of password fields on same-origin HTTPS",
+      "conditions": {
+        "hasPasswordInput": true,
+        "hasInsecureOrCrossOriginPasswordForm": false
+      },
+      "outputFindingId": "SEC_FORM_PASSWORD_DETECTED",
+      "evidenceFields": []
+    },
+    {
+      "id": "RULE_FORM_NO_CREDENTIALS",
+      "stage": "static_html",
+      "category": "security",
+      "description": "Notes absence of password or credential fields",
+      "conditions": {
+        "hasPasswordInput": false
+      },
+      "outputFindingId": "SEC_FORM_NO_CREDENTIALS",
+      "evidenceFields": []
+    },
+    {
+      "id": "RULE_META_REFRESH",
+      "stage": "static_html",
+      "category": "security",
+      "description": "Detects automatic meta-refresh redirect tag in HTML",
+      "conditions": {
+        "hasMetaRefresh": true
+      },
+      "outputFindingId": "SEC_META_REFRESH_REDIRECT",
+      "evidenceFields": ["content"]
+    },
+    {
+      "id": "RULE_HEADER_HSTS_STRONG",
+      "stage": "headers",
+      "category": "security",
+      "description": "Checks for HSTS with max-age >= 120 days",
+      "conditions": {
+        "hasHsts": true,
+        "hstsMaxAgeGte": 10368000
+      },
+      "outputFindingId": "SEC_HEADER_HSTS_STRONG",
+      "evidenceFields": ["hstsValue"]
+    },
+    {
+      "id": "RULE_HEADER_HSTS_SHORT",
+      "stage": "headers",
+      "category": "security",
+      "description": "Flags HSTS with short max-age (< 120 days)",
+      "conditions": {
+        "hasHsts": true,
+        "hstsMaxAgeLt": 10368000
+      },
+      "outputFindingId": "SEC_HEADER_HSTS_SHORT",
+      "evidenceFields": ["maxAge"]
+    },
+    {
+      "id": "RULE_HEADER_HSTS_MISSING",
+      "stage": "headers",
+      "category": "security",
+      "description": "Flags missing HSTS header when served over HTTPS",
+      "conditions": {
+        "isHttps": true,
+        "hasHsts": false
+      },
+      "outputFindingId": "SEC_HEADER_HSTS_MISSING",
+      "evidenceFields": []
+    },
+    {
+      "id": "RULE_HEADER_CSP_ACTIVE",
+      "stage": "headers",
+      "category": "security",
+      "description": "Checks for presence of Content-Security-Policy",
+      "conditions": {
+        "hasCsp": true
+      },
+      "outputFindingId": "SEC_HEADER_CSP_ACTIVE",
+      "evidenceFields": ["policySnippet"]
+    },
+    {
+      "id": "RULE_HEADER_CSP_MISSING",
+      "stage": "headers",
+      "category": "security",
+      "description": "Flags absence of Content-Security-Policy header",
+      "conditions": {
+        "hasCsp": false
+      },
+      "outputFindingId": "SEC_HEADER_CSP_MISSING",
+      "evidenceFields": []
+    },
+    {
+      "id": "RULE_HEADER_XCTO_PRESENT",
+      "stage": "headers",
+      "category": "security",
+      "description": "Verifies X-Content-Type-Options: nosniff header",
+      "conditions": {
+        "hasXctoNosniff": true
+      },
+      "outputFindingId": "SEC_HEADER_XCTO_PRESENT",
+      "evidenceFields": ["headerValue"]
+    },
+    {
+      "id": "RULE_HEADER_FRAMING_PROTECTED",
+      "stage": "headers",
+      "category": "security",
+      "description": "Checks if clickjacking framing protection is enabled",
+      "conditions": {
+        "hasFramingProtection": true
+      },
+      "outputFindingId": "SEC_HEADER_FRAMING_PROTECTED",
+      "evidenceFields": ["mechanism"]
+    },
+    {
+      "id": "RULE_HEADER_VERSION_DISCLOSED",
+      "stage": "headers",
+      "category": "security",
+      "description": "Flags detailed server software version disclosure",
+      "conditions": {
+        "hasServerVersionDisclosure": true
+      },
+      "outputFindingId": "SEC_HEADER_VERSION_DISCLOSED",
+      "evidenceFields": ["banner"]
+    },
+
+    {
+      "id": "RULE_SCRIPTS_MINIMAL",
+      "stage": "static_html",
+      "category": "code",
+      "description": "Identifies pages with zero client-side scripts",
+      "conditions": {
+        "totalScriptsEquals": 0
+      },
+      "outputFindingId": "CODE_SCRIPTS_MINIMAL",
+      "evidenceFields": []
+    },
+    {
+      "id": "RULE_SCRIPTS_HEAVY",
+      "stage": "static_html",
+      "category": "code",
+      "description": "Flags pages with > 20 external script tags",
+      "conditions": {
+        "externalScriptsGt": 20
+      },
+      "outputFindingId": "CODE_SCRIPTS_HEAVY",
+      "evidenceFields": ["scriptCount", "originCount"]
+    },
+    {
+      "id": "RULE_SCRIPTS_OBFUSCATION",
+      "stage": "static_html",
+      "category": "code",
+      "description": "Detects dynamic eval/unescape/atob unpacker patterns",
+      "conditions": {
+        "hasScriptObfuscation": true
+      },
+      "outputFindingId": "CODE_OBFUSCATION_DYNAMIC",
+      "evidenceFields": ["patternDetail"]
+    },
+    {
+      "id": "RULE_IFRAMES_THIRD_PARTY",
+      "stage": "static_html",
+      "category": "code",
+      "description": "Identifies pages embedding third-party external iframes",
+      "conditions": {
+        "thirdPartyIframesGt": 0
+      },
+      "outputFindingId": "CODE_IFRAMES_THIRD_PARTY",
+      "evidenceFields": ["frameCount", "domains"]
+    },
+
+    {
+      "id": "RULE_DOMAIN_IP_LITERAL",
+      "stage": "network",
+      "category": "reputation",
+      "description": "Flags raw IPv4 or IPv6 address used in target URL",
+      "conditions": {
+        "isIpLiteral": true
+      },
+      "outputFindingId": "REP_DOMAIN_IP_LITERAL",
+      "evidenceFields": ["host"]
+    },
+    {
+      "id": "RULE_DOMAIN_UNUSUAL_STRUCTURE",
+      "stage": "network",
+      "category": "reputation",
+      "description": "Identifies unusual hyphen counts, free TLDs, or overlong domains",
+      "conditions": {
+        "isIpLiteral": false,
+        "hasUnusualDomainStructure": true
+      },
+      "outputFindingId": "REP_DOMAIN_UNUSUAL_STRUCTURE",
+      "evidenceFields": ["detail"]
+    },
+    {
+      "id": "RULE_DOMAIN_NORMAL_STRUCTURE",
+      "stage": "network",
+      "category": "reputation",
+      "description": "Verifies standard domain structure",
+      "conditions": {
+        "isIpLiteral": false,
+        "hasUnusualDomainStructure": false,
+        "hasBrandImpersonation": false
+      },
+      "outputFindingId": "REP_DOMAIN_NORMAL",
+      "evidenceFields": ["host"]
+    },
+    {
+      "id": "RULE_BRAND_IMPERSONATION",
+      "stage": "network",
+      "category": "reputation",
+      "description": "Detects brand name embedded in third-party or sub-domain",
+      "conditions": {
+        "hasBrandImpersonation": true
+      },
+      "outputFindingId": "REP_BRAND_IMPERSONATION",
+      "evidenceFields": ["brand", "hostname"]
+    },
+
+    {
+      "id": "RULE_SCAM_URGENCY",
+      "stage": "static_html",
+      "category": "content",
+      "description": "Flags high-pressure urgency scam language",
+      "conditions": {
+        "hasScamKeywords": true
+      },
+      "outputFindingId": "CONTENT_SCAM_URGENCY",
+      "evidenceFields": ["phrases"]
+    },
+    {
+      "id": "RULE_NO_SCAM_KEYWORDS",
+      "stage": "static_html",
+      "category": "content",
+      "description": "Notes absence of aggressive prize/urgency scam phrases",
+      "conditions": {
+        "hasScamKeywords": false
+      },
+      "outputFindingId": "CONTENT_NO_SCAM_KEYWORDS",
+      "evidenceFields": []
+    }
+  ]
+}
+

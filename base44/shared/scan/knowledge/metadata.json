@@ -1,0 +1,27 @@
+{
+  "name": "sus-or-bus-knowledge-base",
+  "version": "2.5.0",
+  "schemaVersion": "1.0.0",
+  "lastUpdated": "2026-10-18T01:30:00Z",
+  "description": "Structured, deterministic, AI-free knowledge base for website safety, privacy, and security risk assessment",
+  "license": "MIT",
+  "provenance": {
+    "maintainer": "SusOrBus Open Security Initiative",
+    "trackerSources": [
+      "DuckDuckGo Tracker Radar (Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International)",
+      "EasyPrivacy / Adblock Plus community lists",
+      "Public CDN and Web Standards Documentation (W3C, MDN, IETF RFCs)"
+    ],
+    "ruleSets": [
+      "OWASP Web Security Testing Guide (WSTG)",
+      "NIST Special Publication 800-52 (TLS Guidelines)",
+      "Mozilla Web Security Guidelines"
+    ]
+  },
+  "stats": {
+    "supportedCategories": 7,
+    "supportedSeverities": 5,
+    "supportedConfidences": 3
+  }
+}
+

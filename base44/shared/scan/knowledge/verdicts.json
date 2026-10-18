@@ -1,0 +1,36 @@
+{
+  "version": "2.5.0",
+  "verdicts": [
+    {
+      "code": "BUS",
+      "label": "BUS",
+      "minScore": 70,
+      "maxScore": 100,
+      "styleClass": "bus",
+      "color": "#2ed573",
+      "summary": "Low detected risk based on completed automated checks.",
+      "explanation": "No critical security flags, cross-origin credential harvesting, or abusive domain patterns were identified during the scan."
+    },
+    {
+      "code": "MILDLY_SUS",
+      "label": "MILDLY SUS",
+      "minScore": 40,
+      "maxScore": 69,
+      "styleClass": "mid",
+      "color": "#ffa502",
+      "summary": "Moderate risk or notable security/privacy cautions detected.",
+      "explanation": "The page exhibits configuration gaps, multiple third-party trackers, missing policy disclosures, or warnings that warrant visitor vigilance."
+    },
+    {
+      "code": "SUS",
+      "label": "SUS",
+      "minScore": 0,
+      "maxScore": 39,
+      "styleClass": "sus",
+      "color": "#ff4757",
+      "summary": "High risk or severe suspicious patterns detected.",
+      "explanation": "The page exhibits high-risk indicators such as unencrypted/cross-origin credential forms, raw IP URLs, high-urgency scam phrases, or deceptive code patterns."
+    }
+  ]
+}
+

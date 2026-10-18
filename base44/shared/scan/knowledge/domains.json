@@ -1,0 +1,535 @@
+{
+  "version": "2.5.0",
+  "provenance": "DuckDuckGo Tracker Radar, EasyPrivacy, W3C Web Standards",
+  "services": [
+    {
+      "pattern": "google-analytics.com",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Google Analytics",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Widely deployed web traffic and visitor analytics platform."
+    },
+    {
+      "pattern": "googletagmanager.com",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Google Tag Manager",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Tag management system injecting tracking pixels and third-party scripts."
+    },
+    {
+      "pattern": "hotjar.com",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Hotjar (Session Replay)",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "EasyPrivacy",
+      "description": "Session recording and heatmap behavioral analytics service."
+    },
+    {
+      "pattern": "clarity.ms",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Microsoft Clarity",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Free behavioral analytics including session replays and click maps."
+    },
+    {
+      "pattern": "mixpanel.com",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Mixpanel",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Product event tracking and funnel analytics platform."
+    },
+    {
+      "pattern": "segment.io",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Twilio Segment",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Customer data platform multiplexing events to downstream analytics."
+    },
+    {
+      "pattern": "segment.com",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Twilio Segment",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Customer data platform API."
+    },
+    {
+      "pattern": "amplitude.com",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Amplitude",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Digital optimization and user event analytics."
+    },
+    {
+      "pattern": "heap.io",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Heap Analytics",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Automated event capture and behavioral analytics."
+    },
+    {
+      "pattern": "plausible.io",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Plausible Analytics",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Privacy-focused lightweight web analytics without cookies."
+    },
+    {
+      "pattern": "matomo.org",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "Matomo Analytics",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Open-source privacy-oriented web analytics platform."
+    },
+    {
+      "pattern": "posthog.com",
+      "method": "suffix",
+      "category": "analytics",
+      "provider": "PostHog",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Product analytics, feature flags, and session replay suite."
+    },
+
+    {
+      "pattern": "doubleclick.net",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Google DoubleClick",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Google display ad serving and behavioral targeting network."
+    },
+    {
+      "pattern": "googlesyndication.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Google AdSense",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Google content-targeted advertising network."
+    },
+    {
+      "pattern": "googleadservices.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Google Ads Conversion",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Google Ads conversion tracking and remarketing tag."
+    },
+    {
+      "pattern": "criteo.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Criteo",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "EasyPrivacy",
+      "description": "Cross-site personalized advertising retargeting network."
+    },
+    {
+      "pattern": "criteo.net",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Criteo",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "EasyPrivacy",
+      "description": "Criteo dynamic ad asset delivery domain."
+    },
+    {
+      "pattern": "outbrain.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Outbrain",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Native sponsored content and advertising recommendation engine."
+    },
+    {
+      "pattern": "taboola.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Taboola",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Sponsored content discovery and advertising feed network."
+    },
+    {
+      "pattern": "adnxs.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "AppNexus (Xandr)",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Real-time bidding programmatic ad exchange."
+    },
+    {
+      "pattern": "pubmatic.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "PubMatic",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Digital advertising supply-side programmatic platform."
+    },
+    {
+      "pattern": "rubiconproject.com",
+      "method": "suffix",
+      "category": "advertising",
+      "provider": "Magnite (Rubicon Project)",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Automated ad marketplace and header bidding infrastructure."
+    },
+    {
+      "pattern": "bat.bing.com",
+      "method": "exact",
+      "category": "advertising",
+      "provider": "Microsoft Advertising UET",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Bing Universal Event Tracking conversion pixel."
+    },
+
+    {
+      "pattern": "connect.facebook.net",
+      "method": "exact",
+      "category": "social",
+      "provider": "Meta Pixel / SDK",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Meta cross-site visitor tracking and conversion optimization pixel."
+    },
+    {
+      "pattern": "platform.twitter.com",
+      "method": "exact",
+      "category": "social",
+      "provider": "X (Twitter) Widget",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Twitter tweet embed and conversion tracking script."
+    },
+    {
+      "pattern": "analytics.tiktok.com",
+      "method": "exact",
+      "category": "social",
+      "provider": "TikTok Pixel",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "TikTok cross-app behavioral tracking and conversion pixel."
+    },
+    {
+      "pattern": "sc-static.net",
+      "method": "suffix",
+      "category": "social",
+      "provider": "Snapchat Pixel",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Snapchat web measurement and conversion tracking pixel."
+    },
+    {
+      "pattern": "licdn.com",
+      "method": "suffix",
+      "category": "social",
+      "provider": "LinkedIn Insight Tag",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "LinkedIn professional demographic and conversion tracking tag."
+    },
+    {
+      "pattern": "pinterest.com",
+      "method": "suffix",
+      "category": "social",
+      "provider": "Pinterest Tag",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "DuckDuckGo Tracker Radar",
+      "description": "Pinterest conversion tracking and audience building tag."
+    },
+
+    {
+      "pattern": "cdnjs.cloudflare.com",
+      "method": "exact",
+      "category": "cdn",
+      "provider": "Cloudflare CDNJS",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Public content delivery network hosting open-source JavaScript libraries."
+    },
+    {
+      "pattern": "cdn.jsdelivr.net",
+      "method": "exact",
+      "category": "cdn",
+      "provider": "jsDelivr CDN",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Free open-source CDN for npm and GitHub packages."
+    },
+    {
+      "pattern": "unpkg.com",
+      "method": "exact",
+      "category": "cdn",
+      "provider": "UNPKG CDN",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Fast global content delivery network for npm modules."
+    },
+    {
+      "pattern": "ajax.googleapis.com",
+      "method": "exact",
+      "category": "cdn",
+      "provider": "Google Hosted Libraries",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Content distribution network for popular open-source JavaScript libraries."
+    },
+
+    {
+      "pattern": "fonts.googleapis.com",
+      "method": "exact",
+      "category": "fonts",
+      "provider": "Google Fonts (CSS)",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Web font stylesheet distribution service."
+    },
+    {
+      "pattern": "fonts.gstatic.com",
+      "method": "exact",
+      "category": "fonts",
+      "provider": "Google Fonts (Binaries)",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Optimized font file asset delivery endpoint."
+    },
+    {
+      "pattern": "use.typekit.net",
+      "method": "exact",
+      "category": "fonts",
+      "provider": "Adobe Fonts (Typekit)",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Commercial typography delivery service."
+    },
+    {
+      "pattern": "use.fontawesome.com",
+      "method": "exact",
+      "category": "fonts",
+      "provider": "FontAwesome CDN",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Vector icon kit distribution network."
+    },
+
+    {
+      "pattern": "sentry.io",
+      "method": "suffix",
+      "category": "error-monitoring",
+      "provider": "Sentry Error Monitoring",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Application crash and diagnostic telemetry monitoring service."
+    },
+    {
+      "pattern": "browser.sentry-cdn.com",
+      "method": "exact",
+      "category": "error-monitoring",
+      "provider": "Sentry SDK CDN",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Client-side error reporting SDK."
+    },
+    {
+      "pattern": "datadoghq.com",
+      "method": "suffix",
+      "category": "error-monitoring",
+      "provider": "Datadog RUM",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Real User Monitoring and frontend performance metrics platform."
+    },
+    {
+      "pattern": "bugsnag.com",
+      "method": "suffix",
+      "category": "error-monitoring",
+      "provider": "Bugsnag",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Error reporting and stability monitoring service."
+    },
+    {
+      "pattern": "logrocket.com",
+      "method": "suffix",
+      "category": "error-monitoring",
+      "provider": "LogRocket (Session Replay)",
+      "isTracker": true,
+      "confidence": "high",
+      "source": "EasyPrivacy",
+      "description": "Frontend session replay, network logging, and issue tracking."
+    },
+
+    {
+      "pattern": "widget.intercom.io",
+      "method": "exact",
+      "category": "customer-support",
+      "provider": "Intercom Chat Widget",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "In-app visitor communication and customer messaging platform."
+    },
+    {
+      "pattern": "zdassets.com",
+      "method": "suffix",
+      "category": "customer-support",
+      "provider": "Zendesk Support",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Customer service ticketing and live chat widget."
+    },
+    {
+      "pattern": "drift.com",
+      "method": "suffix",
+      "category": "customer-support",
+      "provider": "Drift Chat",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Conversational marketing and live sales chat widget."
+    },
+    {
+      "pattern": "crisp.chat",
+      "method": "suffix",
+      "category": "customer-support",
+      "provider": "Crisp Chat",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Customer messaging and live support widget."
+    },
+
+    {
+      "pattern": "js.stripe.com",
+      "method": "exact",
+      "category": "payments",
+      "provider": "Stripe Elements",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Secure PCI-compliant payment card collection form."
+    },
+    {
+      "pattern": "paypal.com",
+      "method": "suffix",
+      "category": "payments",
+      "provider": "PayPal Checkout",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Digital wallet and payment checkout gateway."
+    },
+    {
+      "pattern": "squareup.com",
+      "method": "suffix",
+      "category": "payments",
+      "provider": "Square Web Payments",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Merchant payment processing and checkout SDK."
+    },
+
+    {
+      "pattern": "youtube.com",
+      "method": "suffix",
+      "category": "video",
+      "provider": "YouTube Video",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Embedded streaming video player."
+    },
+    {
+      "pattern": "youtube-nocookie.com",
+      "method": "suffix",
+      "category": "video",
+      "provider": "YouTube Privacy-Enhanced Video",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "Privacy-enhanced YouTube video embed mode without persistent tracking cookies."
+    },
+    {
+      "pattern": "player.vimeo.com",
+      "method": "exact",
+      "category": "video",
+      "provider": "Vimeo Video Player",
+      "isTracker": false,
+      "confidence": "high",
+      "source": "Public Documentation",
+      "description": "High-definition embedded video player."
+    }
+  ]
+}
+

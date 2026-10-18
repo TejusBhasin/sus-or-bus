@@ -1,0 +1,24 @@
+{
+  "version": "2.5.0",
+  "brands": [
+    "paypal", "apple", "google", "microsoft", "amazon", "netflix",
+    "chase", "bankofamerica", "wellsfargo", "facebook", "instagram",
+    "coinbase", "binance", "metamask", "dhl", "fedex", "usps"
+  ],
+  "freeTlds": ["tk", "ml", "ga", "cf", "gq"],
+  "scamKeywords": [
+    { "phrase": "urgent action required", "category": "urgency", "severity": "high" },
+    { "phrase": "verify your account immediately", "category": "phishing", "severity": "high" },
+    { "phrase": "you have won", "category": "lottery_scam", "severity": "high" },
+    { "phrase": "congratulations winner", "category": "lottery_scam", "severity": "high" },
+    { "phrase": "claim your prize now", "category": "lottery_scam", "severity": "high" },
+    { "phrase": "click here to claim", "category": "lottery_scam", "severity": "medium" },
+    { "phrase": "bitcoin doubling", "category": "crypto_scam", "severity": "high" },
+    { "phrase": "free money giveaway", "category": "crypto_scam", "severity": "high" },
+    { "phrase": "security alert: your computer is infected", "category": "tech_support_scam", "severity": "critical" }
+  ],
+  "suspiciousSubdomainPrefixes": [
+    "login", "verify", "secure", "update", "account", "signin", "auth", "support"
+  ]
+}
+

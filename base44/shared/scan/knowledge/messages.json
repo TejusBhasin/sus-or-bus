@@ -1,0 +1,175 @@
+{
+  "version": "2.5.0",
+  "status": {
+    "IDLE": {
+      "id": "STATUS_IDLE",
+      "text": "Paste a link above and hit Check to run your first scan."
+    },
+    "ANALYZING": {
+      "id": "STATUS_ANALYZING",
+      "text": "Analyzing {site} ...",
+      "placeholders": { "site": "string" }
+    },
+    "SUCCESS": {
+      "id": "STATUS_SUCCESS",
+      "text": "Scan completed for {site}.",
+      "placeholders": { "site": "string" }
+    },
+    "PARTIAL": {
+      "id": "STATUS_PARTIAL",
+      "text": "Scan completed with partial coverage: {reason}.",
+      "placeholders": { "reason": "string" }
+    },
+    "FAILED": {
+      "id": "STATUS_FAILED",
+      "text": "Could not check {site} ({error}).",
+      "placeholders": { "site": "string", "error": "string" }
+    }
+  },
+  "emptyStates": {
+    "NO_HISTORY": {
+      "id": "EMPTY_HISTORY",
+      "text": "No recent checks stored on this device."
+    },
+    "NO_PUBLIC_SEARCHES": {
+      "id": "EMPTY_PUBLIC_SEARCHES",
+      "text": "No public searches yet."
+    },
+    "NO_TRACKERS_FOUND": {
+      "id": "EMPTY_TRACKERS",
+      "text": "No known third-party trackers or ad scripts were identified."
+    },
+    "NO_POLICY_LINKS": {
+      "id": "EMPTY_POLICIES",
+      "text": "No terms or privacy links detected on the page."
+    },
+    "NO_SECURITY_HEADERS": {
+      "id": "EMPTY_SECURITY_HEADERS",
+      "text": "No common security headers were sent by the server."
+    },
+    "BROWSER_UNAVAILABLE": {
+      "id": "EMPTY_BROWSER_UNAVAILABLE",
+      "text": "Browser behavior analysis is not configured in this serverless environment (static scanning active). No browser behavior was simulated or assumed."
+    }
+  },
+  "coverageLabels": {
+    "staticHtml": "Static HTML",
+    "securityHeaders": "Security Headers",
+    "redirects": "Redirect Inspection",
+    "trackers": "Tracker Detection",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "browserBehavior": "Browser Automation"
+  },
+  "coverageStates": {
+    "completed": "completed",
+    "unavailable": "unavailable",
+    "unreachable": "unreachable",
+    "not_found": "not found",
+    "partially_completed": "partially completed"
+  },
+  "categories": {
+    "security": { "name": "Security", "description": "Transport, encryption, forms, and client isolation" },
+    "privacy": { "name": "Privacy", "description": "Third-party data leakage and tracking" },
+    "code": { "name": "Client Code", "description": "Scripts, frames, and client-side behavior" },
+    "content": { "name": "Content", "description": "Visible page text, pressure language, and topic classification" },
+    "reputation": { "name": "Reputation & Domain", "description": "Hostname characteristics, TLD safety, and structure" },
+    "policy": { "name": "Policies & Terms", "description": "Privacy policy and terms of service disclosures" },
+    "topic": { "name": "Service Topic", "description": "Heuristic service categorization" }
+  },
+  "severities": {
+    "critical": { "label": "Critical Risk", "weight": 40, "level": "bad" },
+    "high": { "label": "High Risk", "weight": 25, "level": "bad" },
+    "medium": { "label": "Medium Risk", "weight": 12, "level": "warning" },
+    "low": { "label": "Low Risk", "weight": 5, "level": "warning" },
+    "informational": { "label": "Informational", "weight": 0, "level": "good" }
+  },
+  "confidences": {
+    "high": { "label": "High Confidence", "multiplier": 1.0 },
+    "medium": { "label": "Medium Confidence", "multiplier": 0.75 },
+    "low": { "label": "Low Confidence", "multiplier": 0.5 }
+  },
+  "sources": {
+    "STATIC_HTML": "Static HTML",
+    "HTTP_HEADER": "HTTP Header",
+    "HTTP_RESPONSE": "HTTP Response",
+    "POLICY_ANALYSIS": "Policy Analysis",
+    "CROSS_REFERENCE": "Cross-Reference Analysis",
+    "DOMAIN_INSPECTION": "Domain Inspection",
+    "BROWSER_AUTOMATION": "Browser Automation"
+  },
+  "ui": {
+    "REPORT_HEAD": "SUS OR BUS — SITE SAFETY REPORT",
+    "EYEBROW_NEW_CHECK": "Evidence-based assessment",
+    "VERDICT_NOTE": "automated heuristic scan — absence of findings never guarantees safety",
+    "LEGEND": "good = verified safety indicator · warning = requires attention · bad = serious risk flag · checks on this device: {checksCount}",
+    "SCORE_FORMULA_NOTE": "Score model: deterministic weighted risk deduction based on evidence severity and confidence.",
+    "LIMITATIONS": "This report summarizes automated heuristic checks on the fetched page. \"No threats detected\" is NOT a guarantee of safety. Preview availability depends on the target site's own embedding policy.",
+    "BUTTON_COPY": "copy result",
+    "BUTTON_COPIED": "copied!",
+    "BUTTON_NEW_SCAN": "new scan",
+    "BUTTON_NERD_ON": "nerd mode: on",
+    "BUTTON_NERD_OFF": "nerd mode: off",
+    "BUTTON_DARK_MODE": "dark mode",
+    "BUTTON_LIGHT_MODE": "light mode",
+    "BUTTON_PDF": "export PDF",
+    "PREVIEW_BLOCKED": "A live preview can't be embedded here because {reason}.",
+    "PREVIEW_DIRECT_LINK": "Open the site directly"
+  },
+  "errors": {
+    "EMPTY_URL": {
+      "code": "EMPTY_URL",
+      "text": "Type a website address first."
+    },
+    "INVALID_URL": {
+      "code": "INVALID_URL",
+      "text": "Enter a valid website address."
+    },
+    "CREDENTIALS_DISALLOWED": {
+      "code": "CREDENTIALS_DISALLOWED",
+      "text": "URLs with embedded credentials are not allowed."
+    },
+    "UNSUPPORTED_PROTOCOL": {
+      "code": "UNSUPPORTED_PROTOCOL",
+      "text": "Unsupported protocol. Only HTTP and HTTPS are permitted."
+    },
+    "UNSUPPORTED_PORT": {
+      "code": "UNSUPPORTED_PORT",
+      "text": "Custom port :{port} is not permitted. Only standard web ports (80, 443) are allowed.",
+      "placeholders": { "port": "string" }
+    },
+    "HOSTNAME_TOO_LONG": {
+      "code": "HOSTNAME_TOO_LONG",
+      "text": "Hostname exceeds maximum allowable length of 253 characters."
+    },
+    "SSRF_BLOCKED": {
+      "code": "SSRF_BLOCKED",
+      "text": "Destination address ({ip}) is restricted or non-public. Request blocked.",
+      "placeholders": { "ip": "string" }
+    },
+    "PROHIBITED_HOSTNAME": {
+      "code": "PROHIBITED_HOSTNAME",
+      "text": "Access to '{hostname}' is prohibited for security reasons.",
+      "placeholders": { "hostname": "string" }
+    },
+    "REQUEST_TIMEOUT": {
+      "code": "REQUEST_TIMEOUT",
+      "text": "Request timed out after {timeoutMs}ms.",
+      "placeholders": { "timeoutMs": "integer" }
+    },
+    "TOO_MANY_REDIRECTS": {
+      "code": "TOO_MANY_REDIRECTS",
+      "text": "Too many redirects (exceeded limit of {limit}).",
+      "placeholders": { "limit": "integer" }
+    },
+    "RATE_LIMIT_EXCEEDED": {
+      "code": "RATE_LIMIT_EXCEEDED",
+      "text": "Too many checks. Please wait a minute and try again."
+    },
+    "NETWORK_ERROR": {
+      "code": "NETWORK_ERROR",
+      "text": "Connection error: could not contact scanner service."
+    }
+  }
+}
+
