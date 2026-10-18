@@ -26,6 +26,36 @@ const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PAGE_MAX_BYTES = 50000;
 const POLICY_MAX_BYTES = 15000;
 
+// ResultVariation phrase pools, loaded once per worker instance. They give
+// every report its own wording while staying fully deterministic: the same
+// input always picks the same phrases via a stable hash. No AI involved.
+let phrasesCache = null;
+async function loadVariations(base44) {
+  if (phrasesCache) return phrasesCache;
+  try {
+    let items = [];
+    try {
+      const res = await base44.asServiceRole.entities.ResultVariation.filter({}, '-created_date', 1000);
+      items = Array.isArray(res) ? res : res && res.items ? res.items : [];
+    } catch {
+      const res = await base44.asServiceRole.entities.ResultVariation.filter({}, { limit: 1000 });
+      items = res && res.items ? res.items : Array.isArray(res) ? res : [];
+    }
+    const grouped = {};
+    for (const item of items) {
+      if (!item.category || !item.text) continue;
+      if (!grouped[item.category]) grouped[item.category] = [];
+      grouped[item.category].push(item.text);
+    }
+    console.log('variations loaded:', items.length, 'records,', Object.keys(grouped).length, 'categories');
+    // only cache a usable load; otherwise retry on the next scan
+    if (Object.keys(grouped).length > 0) phrasesCache = grouped;
+  } catch (e) {
+    console.log('variations load failed:', String(e && e.message));
+  }
+  return phrasesCache;
+}
+
 const VALID_INPUT_TYPES = ['url', 'html', 'code', 'email', 'text', 'terms', 'document'];
 const TEXTUAL_CONTENT_RE = /text\/|json|csv|markdown|xml/i;
 
@@ -281,7 +311,11 @@ export default async function(req) {
 
     // --- score, summarize, save ---
     const result = scoreFindings(findings);
-    const summaries = buildSummaries(result.points, result.verdict);
+    const phrases = await loadVariations(base44);
+    const seed = inputType === 'url' ? 'url:' + url : inputType + ':' + content.slice(0, 200);
+    const kind =
+      inputType === 'url' ? 'site' : inputType === 'document' ? 'document' : inputType === 'email' ? 'message' : 'input';
+    const summaries = buildSummaries(result.points, result.verdict, seed, phrases, kind);
     details.redFlags = result.redFlags;
     details.greenFlags = result.greenFlags;
 

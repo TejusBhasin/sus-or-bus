@@ -988,24 +988,89 @@ export function scoreFindings(rawFindings) {
   return { score, verdict, points, redFlags, greenFlags };
 }
 
-export function buildSummaries(points, verdict) {
+// Deterministic variety: a stable string hash picks one phrase per slot from
+// the ResultVariation pools, so the same input always reads the same, while
+// different inputs get different wording. It reads like AI; it is a hash.
+
+function stableHash(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function pickPhrase(phrases, category, seed, salt) {
+  const pool = (phrases && phrases[category]) || [];
+  if (pool.length === 0) return null;
+  return pool[stableHash(seed + '|' + category + '|' + salt) % pool.length];
+}
+
+export function buildSummaries(points, verdict, seed, phrases, kind) {
   const bad = points.filter((p) => p.severity === 'bad');
   const warn = points.filter((p) => p.severity === 'warning');
   const good = points.filter((p) => p.severity === 'good');
   const lead = points.slice(0, 3).map((p) => p.title.toLowerCase()).join('; ');
+  const subject = kind || 'input';
+  const seedStr = seed || 'scan';
 
-  const summary =
-    verdict === 'bus'
-      ? `Automated evidence scan: ${good.length} positive, ${warn.length} cautionary and ${bad.length} high-severity signals. ` +
-        `Leading signals: ${lead || 'none'}. No match is a guarantee of safety.`
-      : `Automated evidence scan flagged this input with ${bad.length} high-severity and ${warn.length} cautionary signals. ` +
-        `Leading signals: ${lead || 'none'}.`;
+  const fill = (t) =>
+    String(t || '')
+      .replace(/\{kind\}/g, subject)
+      .replace(/\{lead\}/g, lead || 'none')
+      .replace(/\{good\}/g, good.length)
+      .replace(/\{warn\}/g, warn.length)
+      .replace(/\{bad\}/g, bad.length);
 
-  const simpleSummary =
-    verdict === 'bus'
-      ? `The automatic checks mostly came back fine, with ${warn.length} thing${warn.length === 1 ? '' : 's'} worth knowing about. ` +
-        'Computers cannot catch everything, so keep your wits about you.'
-      : `The automatic checks found ${bad.length + warn.length} thing${bad.length + warn.length === 1 ? '' : 's'} that look unsafe, so it is best to stay away.`;
+  const hasPhrases = phrases && Object.keys(phrases).length > 0;
+
+  let summary = '';
+  let simpleSummary = '';
+
+  if (hasPhrases) {
+    const parts = [];
+    const opener = pickPhrase(phrases, verdict === 'bus' ? 'bus_lead' : 'sus_lead', seedStr, 'lead');
+    if (opener) parts.push(fill(opener));
+    if (good.length > 0) {
+      const g = pickPhrase(phrases, 'good_note', seedStr, 'good');
+      if (g) parts.push(fill(g));
+    }
+    if (warn.length > 0) {
+      const w = pickPhrase(phrases, 'caution_note', seedStr, 'caution');
+      if (w) parts.push(fill(w));
+    }
+    if (bad.length > 0) {
+      const r = pickPhrase(phrases, 'red_note', seedStr, 'red');
+      if (r) parts.push(fill(r));
+    }
+    const close = pickPhrase(phrases, verdict === 'bus' ? 'close_bus' : 'close_sus', seedStr, 'close');
+    if (close) parts.push(fill(close));
+    const caveat = pickPhrase(phrases, 'caveat', seedStr, 'caveat');
+    if (caveat) parts.push(fill(caveat));
+    summary = parts.join(' ');
+
+    const sOpener = pickPhrase(phrases, verdict === 'bus' ? 'simple_bus' : 'simple_sus', seedStr, 'simple');
+    const sCaveat = pickPhrase(phrases, 'caveat', seedStr, 'simple-caveat');
+    simpleSummary = [sOpener ? fill(sOpener) : '', sCaveat ? fill(sCaveat) : ''].filter(Boolean).join(' ');
+  }
+
+  // Fallback when the variation pools are unavailable
+  if (!summary) {
+    summary =
+      verdict === 'bus'
+        ? `Automated evidence scan: ${good.length} positive, ${warn.length} cautionary and ${bad.length} high-severity signals. ` +
+          `Leading signals: ${lead || 'none'}. No match is a guarantee of safety.`
+        : `Automated evidence scan flagged this ${subject} with ${bad.length} high-severity and ${warn.length} cautionary signals. ` +
+          `Leading signals: ${lead || 'none'}.`;
+  }
+  if (!simpleSummary) {
+    simpleSummary =
+      verdict === 'bus'
+        ? `The automatic checks mostly came back fine, with ${warn.length} thing${warn.length === 1 ? '' : 's'} worth knowing about. ` +
+          'Computers cannot catch everything, so keep your wits about you.'
+        : `The automatic checks found ${bad.length + warn.length} thing${bad.length + warn.length === 1 ? '' : 's'} that look unsafe, so it is best to stay away.`;
+  }
 
   return { summary, simpleSummary };
 }

@@ -1,0 +1,30 @@
+{
+  "name": "ResultVariation",
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "description": "Which slot of the final summary the phrase fills",
+      "enum": [
+        "bus_lead",
+        "sus_lead",
+        "good_note",
+        "caution_note",
+        "red_note",
+        "close_bus",
+        "close_sus",
+        "simple_bus",
+        "simple_sus",
+        "caveat"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "description": "Phrase template. May contain {good} {warn} {bad} {lead} {kind} placeholders filled at scan time."
+    }
+  },
+  "required": [
+    "category",
+    "text"
+  ]
+}
