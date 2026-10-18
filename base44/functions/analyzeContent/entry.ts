@@ -16,13 +16,13 @@ import {
 
 // How a scan flows through this function (fully deterministic, no AI):
 //   1. validate the input (URLs go through the SSRF-safe normalizer)
-//   2. for URLs: serve a cached report if we have a fresh one, otherwise
-//      fetch the page (every redirect hop re-validated, byte-capped)
+//   2. fetch the page (every redirect hop re-validated, byte-capped)
 //   3. run the rule-based engine: address, headers, static HTML, and the
 //      site's own terms / privacy policy pages
 //   4. score the findings with the fixed penalty model and save the report
+// Every scan runs fresh: the deterministic engine costs no AI credits, so
+// there is no shared cache — a site checked minutes ago is checked again.
 
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PAGE_MAX_BYTES = 50000;
 const POLICY_MAX_BYTES = 15000;
 
@@ -159,31 +159,6 @@ export default async function(req) {
           sourceCode: '',
           terms_privacy: null,
           reportId: vipReport.id
-        });
-      }
-
-      // Shared cache: if anyone scanned this exact site in the last 7 days,
-      // reuse that report instead of re-running the engine.
-      const recent = await base44.asServiceRole.entities.Report.filter({ input_type: 'url', url }, '-created_date', 1);
-      const prev = recent && recent[0];
-      if (prev && Date.now() - new Date(prev.created_date).getTime() < CACHE_TTL_MS) {
-        return Response.json({
-          verdict: prev.verdict,
-          score: prev.score,
-          summary: prev.simple_summary || prev.summary,
-          points: prev.points || [],
-          details: prev.details || {},
-          preview: {
-            title: prev.preview_title || '',
-            description: prev.preview_description || '',
-            status: null,
-            finalUrl: url,
-            fetchError: ''
-          },
-          sourceCode: prev.source_code || '',
-          terms_privacy: prev.terms_privacy || null,
-          reportId: prev.id,
-          cached: true
         });
       }
 
