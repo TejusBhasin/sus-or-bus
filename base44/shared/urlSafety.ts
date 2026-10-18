@@ -1,14 +1,17 @@
 // URL input safety for Sus or Bus.
 //
 // normalizeUrl(): validates and normalizes a user-supplied URL, and blocks
-//   private / loopback / reserved destinations (the SSRF guard).
+//   private / loopback / reserved destinations (the SSRF guard). All error
+//   text comes from the knowledge base error catalog.
 // safeFetch(): fetches with a manual redirect loop (every hop is
 //   re-validated), plus a hard timeout and a hard cap on downloaded bytes.
 //
 // Limitation, documented honestly: this runtime cannot resolve DNS itself,
-// so hostname-based destinations are validated by name and IP-literal form.
-// A domain that resolves to a private address behind DNS can only be caught
-// by the redirect/IP rules below, not by a DNS lookup.
+// so hostname destinations are validated by name and IP-literal form. A
+// hostname that privately resolves behind DNS can only be caught by the
+// redirect/IP rules below, not by a DNS lookup.
+
+import { ERRORS } from './knowledgeBase.ts';
 
 const MAX_REDIRECTS = 5;
 const DEFAULT_TIMEOUT_MS = 12000;
@@ -69,11 +72,11 @@ function isPrivateIpv6(host) {
 
 export function normalizeUrl(raw) {
   if (typeof raw !== 'string' || !raw.trim()) {
-    return { ok: false, error: 'A URL is required' };
+    return { ok: false, error: ERRORS.URL_REQUIRED };
   }
   let candidate = raw.trim();
   if (candidate.length > 2000) {
-    return { ok: false, error: 'The URL is too long' };
+    return { ok: false, error: ERRORS.URL_TOO_LONG };
   }
   if (!/^https?:\/\//i.test(candidate)) {
     candidate = 'https://' + candidate;
@@ -82,33 +85,31 @@ export function normalizeUrl(raw) {
   try {
     u = new URL(candidate);
   } catch {
-    return { ok: false, error: 'That does not look like a valid web address' };
+    return { ok: false, error: ERRORS.URL_INVALID };
   }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') {
-    return { ok: false, error: 'Only http and https addresses can be scanned' };
+    return { ok: false, error: ERRORS.SCHEME };
   }
   if (u.username || u.password) {
-    return { ok: false, error: 'Addresses with embedded usernames or passwords are not supported' };
+    return { ok: false, error: ERRORS.CREDENTIALS };
   }
   if (!ALLOWED_PORTS.includes(u.port)) {
-    return { ok: false, error: 'Only standard web ports are supported' };
+    return { ok: false, error: ERRORS.PORT };
   }
   const host = u.hostname.toLowerCase();
   if (!host) {
-    return { ok: false, error: 'The address is missing a host name' };
+    return { ok: false, error: ERRORS.NO_HOST };
   }
   if (BLOCKED_HOSTNAMES.has(host) || LOCAL_SUFFIXES.some((s) => host.endsWith(s))) {
-    return { ok: false, error: 'Local and internal addresses are not scanned' };
+    return { ok: false, error: ERRORS.LOCAL_HOST };
   }
   const v4 = ipv4Parts(host);
   if (v4) {
-    if (isPrivateIpv4(v4)) {
-      return { ok: false, error: 'Private and reserved IP addresses are not scanned' };
-    }
+    if (isPrivateIpv4(v4)) return { ok: false, error: ERRORS.PRIVATE_IP };
   } else if (host.includes(':') && isPrivateIpv6(host)) {
-    return { ok: false, error: 'Private and reserved IP addresses are not scanned' };
+    return { ok: false, error: ERRORS.PRIVATE_IP };
   }
-  // Stable normalized form: origin + path + query (no credentials possible)
+  // Stable normalized form: origin + path + query (credentials impossible)
   const normalized = u.origin + (u.pathname && u.pathname !== '/' ? u.pathname : '') + u.search + u.hash;
   return {
     ok: true,
@@ -121,10 +122,10 @@ export function normalizeUrl(raw) {
 
 function friendlyFetchError(e) {
   const msg = String((e && e.message) || e);
-  if (/timeout|timed?\s?out|abort/i.test(msg)) return 'The site took too long to respond';
-  if (/dns|not\s?found|resolve/i.test(msg)) return 'The address could not be found (DNS lookup failed)';
-  if (/refused|reset|unreachable/i.test(msg)) return 'The site refused the connection';
-  return 'The site could not be reached';
+  if (/timeout|timed?\s?out|abort/i.test(msg)) return ERRORS.FETCH_TIMEOUT;
+  if (/dns|not\s?found|resolve/i.test(msg)) return ERRORS.FETCH_DNS;
+  if (/refused|reset|unreachable/i.test(msg)) return ERRORS.FETCH_REFUSED;
+  return ERRORS.FETCH_UNREACHABLE;
 }
 
 async function readCapped(resp, maxBytes) {
@@ -190,7 +191,7 @@ export async function safeFetch(rawUrl, opts) {
         if (r.body) await r.body.cancel();
       } catch {}
       if (!location) {
-        return { ok: false, error: 'The site redirected without a destination', chain, url: current.url };
+        return { ok: false, error: ERRORS.REDIRECT_EMPTY, chain, url: current.url };
       }
       let next;
       try {
@@ -199,12 +200,7 @@ export async function safeFetch(rawUrl, opts) {
         next = { ok: false };
       }
       if (!next.ok) {
-        return {
-          ok: false,
-          error: next.error || 'The site redirected to an invalid or unsafe address',
-          chain,
-          url: current.url
-        };
+        return { ok: false, error: next.error || ERRORS.REDIRECT_UNSAFE, chain, url: current.url };
       }
       chain.push({ from: current.url, to: next.url, status: r.status });
       current = next;
@@ -215,7 +211,7 @@ export async function safeFetch(rawUrl, opts) {
   }
 
   if (!resp) {
-    return { ok: false, error: 'Too many redirects', chain, url: current.url };
+    return { ok: false, error: ERRORS.REDIRECT_LIMIT, chain, url: current.url };
   }
 
   const contentType = resp.headers.get('content-type') || '';
