@@ -2,37 +2,32 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { normalizeUrl, safeFetch } from '../../shared/urlSafety.ts';
 import {
   findPolicyLinks,
-  extractPageObservations,
-  analyzePolicyText
-} from '../../shared/collectors.ts';
-import {
-  runDomainRules,
-  runHeaderRules,
-  runPageRules,
-  runPolicyRules,
-  runTextRules,
-  runCodeRules,
-  runFetchRules,
-  buildReport
-} from '../../shared/ruleEngine.ts';
+  analyzeDomain,
+  analyzeHeaders,
+  analyzeHtml,
+  analyzePolicyText,
+  mergeTermsPrivacy,
+  policyMainFindings,
+  analyzeTextContent,
+  analyzeCode,
+  scoreFindings,
+  buildSummaries
+} from '../../shared/scanEngine.ts';
 
 // How a scan flows through this function (fully deterministic, no AI):
 //   1. validate the input (URLs go through the SSRF-safe normalizer)
 //   2. for URLs: serve a cached report if we have a fresh one, otherwise
 //      fetch the page (every redirect hop re-validated, byte-capped)
-//   3. collect observations and evaluate the rule engine: address, headers,
-//      static HTML, and the site's own terms / privacy policy pages
-//   4. score the findings with the fixed model, save the report, return it
-//
-// Every user-visible string in the result comes from the knowledge base
-// (base44/shared/knowledgeBase.ts) through validated templates.
+//   3. run the rule-based engine: address, headers, static HTML, and the
+//      site's own terms / privacy policy pages
+//   4. score the findings with the fixed penalty model and save the report
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const PAGE_MAX_BYTES = 50000;
 const POLICY_MAX_BYTES = 15000;
 
 const VALID_INPUT_TYPES = ['url', 'html', 'code', 'email', 'text', 'terms', 'document'];
-const HTML_CONTENT_RE = /html|xml|text\/|json|csv|markdown/i;
+const TEXTUAL_CONTENT_RE = /text\/|json|csv|markdown|xml/i;
 
 function emptyDetails() {
   return {
@@ -67,7 +62,7 @@ export default async function(req) {
       return Response.json({ error: 'Content is required' }, { status: 400 });
     }
 
-    const matches = [];
+    const findings = [];
     const details = emptyDetails();
     const preview = { title: '', description: '', status: null, finalUrl: '', fetchError: '' };
     let sourceCode = '';
@@ -165,96 +160,128 @@ export default async function(req) {
       // --- fetch the page (SSRF-safe, redirect-validated, byte-capped) ---
       const fetchResult = await safeFetch(url, { maxBytes: PAGE_MAX_BYTES, timeoutMs: 15000 });
       let pageHtml = '';
-      const isHtmlContent = fetchResult.ok && HTML_CONTENT_RE.test(fetchResult.contentType);
-      matches.push(...runFetchRules({ ok: fetchResult.ok, error: fetchResult.error, contentType: fetchResult.contentType, isHtml: isHtmlContent }));
-      const isHttps = fetchResult.ok ? fetchResult.finalUrl.startsWith('https:') : norm.protocol === 'https:';
+      let isHttps = norm.protocol === 'https:';
+      let htmlAnalysis = null;
+      let foundPolicyLinks = false;
 
-      matches.push(...runDomainRules(norm.host, isHttps));
-
-      if (pageHtml === '' && isHtmlContent) {
-        pageHtml = fetchResult.text;
+      if (fetchResult.ok) {
+        preview.status = fetchResult.status;
+        preview.finalUrl = fetchResult.finalUrl;
+        isHttps = fetchResult.finalUrl.startsWith('https:');
+        if (TEXTUAL_CONTENT_RE.test(fetchResult.contentType) || /html/i.test(fetchResult.contentType)) {
+          pageHtml = fetchResult.text;
+        } else if (fetchResult.contentType) {
+          findings.push({
+            title: 'The address does not return a web page',
+            severity: 'warning',
+            category: 'content',
+            description: `The address returned "${fetchResult.contentType}" instead of an HTML page, so its content could not be analyzed. The verdict rests only on the address and response headers.`,
+            simple_description: 'This address points to a file, not a normal web page, so the scan could only check the address itself.'
+          });
+        }
+      } else {
+        preview.fetchError = fetchResult.error;
+        findings.push({
+          title: 'The page itself could not be loaded',
+          severity: 'warning',
+          category: 'security',
+          description: `The scanner could not load this page (${fetchResult.error}), so the verdict is based only on the address itself, not on the site's content.`,
+          simple_description: `The scan could not open this site (${fetchResult.error}), so it only checked the address, not what is on the page.`
+        });
       }
 
+      findings.push(...analyzeDomain(norm.host, isHttps));
+
       if (pageHtml) {
-        if (fetchResult.ok) preview.status = fetchResult.status;
-        preview.finalUrl = fetchResult.finalUrl;
         sourceCode = pageHtml.slice(0, 20000);
+        if (fetchResult.ok) findings.push(...analyzeHeaders(fetchResult.headers, isHttps));
 
-        if (fetchResult.ok) matches.push(...runHeaderRules(fetchResult.headers, isHttps));
+        htmlAnalysis = analyzeHtml(pageHtml, fetchResult.finalUrl, isHttps);
+        findings.push(...htmlAnalysis.findings);
+        preview.title = htmlAnalysis.title;
+        preview.description = htmlAnalysis.description;
+        details.title = htmlAnalysis.title;
+        details.description = htmlAnalysis.description;
+        details.dataCollected = htmlAnalysis.dataCollected;
+        details.trackers = htmlAnalysis.trackers;
+        details.technologies = htmlAnalysis.technologies;
+        details.codeNotes = htmlAnalysis.codeNotes;
+        details.simple_code_notes = htmlAnalysis.simpleCodeNotes;
 
-        const pageObs = extractPageObservations(pageHtml, fetchResult.finalUrl, isHttps);
-        const pageResult = runPageRules(pageObs, isHttps);
-        matches.push(...pageResult.matches);
-        preview.title = pageObs.title;
-        preview.description = pageObs.description;
-        details.title = pageObs.title;
-        details.description = pageObs.description;
-        details.dataCollected = pageResult.dataCollected;
-        details.trackers = pageResult.trackers;
-        details.technologies = pageResult.technologies;
-        details.codeNotes = pageResult.codeNotes;
-        details.simple_code_notes = pageResult.simpleCodeNotes;
-
-        // --- fetch the site's own terms / privacy pages (bounded) ---
+        // --- fetch the site's own terms / privacy pages (bounded, re-validated) ---
         const links = findPolicyLinks(pageHtml, fetchResult.finalUrl);
-        const linksFound = !!(links.terms || links.privacy);
+        foundPolicyLinks = !!(links.terms || links.privacy);
         const [termsFetch, privacyFetch] = await Promise.all([
           links.terms ? safeFetch(links.terms, { maxBytes: POLICY_MAX_BYTES, timeoutMs: 8000 }) : Promise.resolve(null),
           links.privacy ? safeFetch(links.privacy, { maxBytes: POLICY_MAX_BYTES, timeoutMs: 8000 }) : Promise.resolve(null)
         ]);
         const termsAnalysis = termsFetch && termsFetch.ok ? analyzePolicyText(termsFetch.text, 'terms') : null;
         const privacyAnalysis = privacyFetch && privacyFetch.ok ? analyzePolicyText(privacyFetch.text, 'privacy') : null;
-        const policyResult = runPolicyRules(termsAnalysis, privacyAnalysis, linksFound);
-        matches.push(...policyResult.matches);
-        termsPrivacy = policyResult.termsPrivacy;
+        termsPrivacy = mergeTermsPrivacy(termsAnalysis, privacyAnalysis);
+        findings.push(...policyMainFindings(termsPrivacy, foundPolicyLinks));
       }
     } else if (inputType === 'html') {
       sourceCode = content.slice(0, 20000);
-      const pageObs = extractPageObservations(content, '', true);
-      const pageResult = runPageRules(pageObs, true);
-      matches.push(...pageResult.matches);
-      details.title = pageObs.title;
-      details.description = pageObs.description;
-      details.dataCollected = pageResult.dataCollected;
-      details.trackers = pageResult.trackers;
-      details.technologies = pageResult.technologies;
-      details.codeNotes = pageResult.codeNotes;
-      details.simple_code_notes = pageResult.simpleCodeNotes;
+      const htmlAnalysis = analyzeHtml(content, '', true);
+      findings.push(...htmlAnalysis.findings);
+      details.title = htmlAnalysis.title;
+      details.description = htmlAnalysis.description;
+      details.dataCollected = htmlAnalysis.dataCollected;
+      details.trackers = htmlAnalysis.trackers;
+      details.technologies = htmlAnalysis.technologies;
+      details.codeNotes = htmlAnalysis.codeNotes;
+      details.simple_code_notes = htmlAnalysis.simpleCodeNotes;
     } else if (inputType === 'code') {
       sourceCode = content.slice(0, 20000);
-      const codeResult = runCodeRules(content);
-      matches.push(...codeResult.matches);
-      details.codeNotes = codeResult.codeNotes;
-      details.simple_code_notes = codeResult.simpleCodeNotes;
+      const codeAnalysis = analyzeCode(content);
+      findings.push(...codeAnalysis.findings);
+      details.codeNotes = codeAnalysis.codeNotes;
+      details.simple_code_notes = codeAnalysis.simpleCodeNotes;
     } else if (inputType === 'terms') {
       // The input IS a policy document: analyze it as one, and let its
-      // clause findings double as the main findings.
-      const analysis = analyzePolicyText(content, 'terms');
-      for (const id of analysis.matchedIds.concat(analysis.deniedIds)) {
-        matches.push({ ruleId: 'PR_DIRECT', findingId: id, vars: {} });
+      // points double as the main findings.
+      termsPrivacy = analyzePolicyText(content, 'terms');
+      for (const p of termsPrivacy.points) {
+        findings.push({
+          title: p.title,
+          severity: p.severity,
+          category: 'privacy',
+          description: p.description,
+          simple_description: p.simple_description
+        });
       }
-      termsPrivacy = runPolicyRules(analysis, null, true).termsPrivacy;
     } else if (inputType === 'document') {
       preview.title = fileName || 'Uploaded document';
       details.title = preview.title;
       const docFetch = await safeFetch(fileUrl, { maxBytes: PAGE_MAX_BYTES, timeoutMs: 15000 });
-      const readable = docFetch.ok && (HTML_CONTENT_RE.test(docFetch.contentType) || !docFetch.contentType);
-      if (readable) {
-        matches.push(...runTextRules(docFetch.text, 'text'));
+      if (docFetch.ok && (TEXTUAL_CONTENT_RE.test(docFetch.contentType) || !docFetch.contentType)) {
+        findings.push(...analyzeTextContent(docFetch.text, 'text'));
       } else {
         // Honest limitation: binary documents (PDF, images, office files)
         // cannot be read by the rule engine, so nothing was verified.
-        const reason = docFetch.ok ? docFetch.contentType || 'unknown format' : 'unreachable file';
-        matches.push({ ruleId: 'R_DOC_UNREADABLE', findingId: 'DOC_UNREADABLE', vars: { name: fileName || 'document', reason } });
-        matches.push({ ruleId: 'R_DOC_UNVERIFIED', findingId: 'DOC_UNVERIFIED', vars: {} });
+        findings.push({
+          title: 'No automated checks could run on this document',
+          severity: 'bad',
+          category: 'content',
+          description: `The uploaded document ("${fileName}") is in a binary format (${docFetch.ok ? docFetch.contentType || 'unknown' : 'unreachable file'}) the scanner cannot read without an AI reader. Nothing inside it was verified, so treat it as untrusted until a person reviews it.`,
+          simple_description: 'The scan cannot read this kind of file, so nothing inside it was checked. It is not flagged as dangerous, it is simply unverified.'
+        });
+        findings.push({
+          title: 'Document content unavailable to the checks',
+          severity: 'warning',
+          category: 'content',
+          description: 'Because the document could not be read, no links, payment requests, or instructions inside it were analyzed.',
+          simple_description: 'Because the scan could not open the file, it could not look for links or tricks inside it.'
+        });
       }
     } else {
       // 'text' and 'email'
-      matches.push(...runTextRules(content, inputType));
+      findings.push(...analyzeTextContent(content, inputType));
     }
 
     // --- score, summarize, save ---
-    const result = buildReport(matches);
+    const result = scoreFindings(findings);
+    const summaries = buildSummaries(result.points, result.verdict);
     details.redFlags = result.redFlags;
     details.greenFlags = result.greenFlags;
 
@@ -264,8 +291,8 @@ export default async function(req) {
       url: inputType === 'document' ? fileUrl : url,
       verdict: result.verdict,
       score: result.score,
-      summary: result.summary,
-      simple_summary: result.simpleSummary,
+      summary: summaries.summary,
+      simple_summary: summaries.simpleSummary,
       points: result.points,
       details,
       preview_title: preview.title,
@@ -277,8 +304,8 @@ export default async function(req) {
     return Response.json({
       verdict: result.verdict,
       score: result.score,
-      summary: result.summary,
-      simple_summary: result.simpleSummary,
+      summary: summaries.summary,
+      simple_summary: summaries.simpleSummary,
       points: result.points,
       details,
       preview,
