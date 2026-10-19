@@ -21,7 +21,7 @@ export default function TabBar() {
   return (
     <nav
       aria-label="App navigation"
-      className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/80 backdrop-blur pb-safe-nav"
+      className="fixed bottom-0 inset-x-0 z-50 border-t border-border bg-background/80 backdrop-blur pb-safe-nav print:hidden"
     >
       <div className="max-w-2xl mx-auto grid grid-cols-3">
         {tabs.map((tab) => {

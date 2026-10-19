@@ -118,3 +118,17 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  /* the dashboard panel keeps its on-screen colors when printed */
+  .print-exact,
+  .print-exact * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

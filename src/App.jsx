@@ -17,6 +17,7 @@ const Settings = lazy(() => import('@/pages/Settings'));
 const Faq = lazy(() => import('@/pages/Faq'));
 const Extension = lazy(() => import('@/pages/Extension'));
 const History = lazy(() => import('@/pages/History'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Account = lazy(() => import('@/pages/Account'));
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
@@ -68,6 +69,7 @@ const AnimatedRoutes = () => {
             <Route path="/FAQ" element={<Faq />} />
             <Route path="/extension" element={<Extension />} />
             <Route path="/history" element={<History />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/account" element={<Account />} />
             <Route path="/" element={<Home />} />
             <Route path="/report/:id" element={<Report />} />

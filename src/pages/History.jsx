@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Download, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
 import RecentReports from '@/components/susbus/RecentReports';
@@ -90,6 +91,12 @@ export default function History() {
         <p className="mt-1 text-sm text-muted-foreground">
           Every verdict Sus or Bus has saved, newest first — download them all as a CSV to review outside the app.
         </p>
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center gap-1.5 mt-3 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+        >
+          View your threat landscape dashboard →
+        </Link>
 
         <Button
           onClick={exportCsv}
