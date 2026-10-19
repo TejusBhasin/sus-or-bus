@@ -9,9 +9,9 @@ const CATEGORY = {
 };
 
 const LEVEL = {
-  good: { text: 'text-emerald-400', border: 'border-l-emerald-500' },
-  warning: { text: 'text-amber-400', border: 'border-l-amber-500' },
-  bad: { text: 'text-red-400', border: 'border-l-red-500' }
+  good: { text: 'text-emerald-600 dark:text-emerald-400', border: 'border-l-emerald-500' },
+  warning: { text: 'text-amber-600 dark:text-amber-400', border: 'border-l-amber-500' },
+  bad: { text: 'text-red-600 dark:text-red-400', border: 'border-l-red-500' }
 };
 
 export default function FindingCard({ level, category, title, summary, impact, evidence, whyItMatters, recommendation, source }) {
@@ -27,7 +27,7 @@ export default function FindingCard({ level, category, title, summary, impact, e
           </span>
           {source && <span className="text-[11px] uppercase tracking-wider text-muted-foreground/70">· {source}</span>}
         </div>
-        <span className={`rounded px-2 py-0.5 font-mono text-[11px] font-bold ${impact > 0 ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
+        <span className={`rounded px-2 py-0.5 font-mono text-[11px] font-bold ${impact > 0 ? 'bg-red-500/15 text-red-600 dark:text-red-400' : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'}`}>
           {pts}
         </span>
       </div>
@@ -40,7 +40,7 @@ export default function FindingCard({ level, category, title, summary, impact, e
         </p>
       )}
       {recommendation && (
-        <p className="mt-1.5 text-xs leading-relaxed text-emerald-400/90">
+        <p className="mt-1.5 text-xs leading-relaxed text-emerald-700 dark:text-emerald-400">
           <span className="font-bold">Fix:</span> {recommendation}
         </p>
       )}
