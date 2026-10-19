@@ -1051,9 +1051,10 @@ export function buildSummaries(points, verdict, seed, phrases, kind) {
     if (caveat) parts.push(fill(caveat));
     summary = parts.join(' ');
 
-    const sOpener = pickPhrase(phrases, verdict === 'bus' ? 'simple_bus' : 'simple_sus', seedStr, 'simple');
-    const sCaveat = pickPhrase(phrases, 'caveat', seedStr, 'simple-caveat');
-    simpleSummary = [sOpener ? fill(sOpener) : '', sCaveat ? fill(sCaveat) : ''].filter(Boolean).join(' ');
+    // Simple mode: a plain two-sentence overview, plus a third only when a safe result still has problems
+    const plain = pickPhrase(phrases, verdict === 'bus' ? 'plain_bus' : 'plain_sus', seedStr, 'plain');
+    const extra = verdict === 'bus' && bad.length > 0 ? pickPhrase(phrases, 'plain_extra', seedStr, 'plain-extra') : null;
+    simpleSummary = [plain ? fill(plain) : '', extra ? fill(extra) : ''].filter(Boolean).join(' ');
   }
 
   // Fallback when the variation pools are unavailable

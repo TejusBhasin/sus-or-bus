@@ -15,7 +15,10 @@
         "close_sus",
         "simple_bus",
         "simple_sus",
-        "caveat"
+        "caveat",
+        "plain_bus",
+        "plain_sus",
+        "plain_extra"
       ]
     },
     "text": {

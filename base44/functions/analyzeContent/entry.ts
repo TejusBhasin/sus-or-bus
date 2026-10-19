@@ -37,7 +37,12 @@ async function loadVariations(base44) {
     const items = [];
     let cursor;
     do {
-      const page = await base44.asServiceRole.entities.ResultVariation.filter({}, '-created_date', 5000);
+      const plainCats = ['plain_bus', 'plain_sus', 'plain_extra'];
+      const [a, b] = await Promise.all([
+        base44.asServiceRole.entities.ResultVariation.filter({ category: { $in: plainCats } }, '-created_date', 5000),
+        base44.asServiceRole.entities.ResultVariation.filter({ category: { $nin: plainCats } }, '-created_date', 5000)
+      ]);
+      const page = [...a, ...b];
       if (Array.isArray(page)) { items.push(...page); break; }
       items.push(...(page.items || []));
       cursor = page.has_more ? page.next_cursor : null;
