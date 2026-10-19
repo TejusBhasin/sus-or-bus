@@ -83,7 +83,7 @@ export default function UrlScanReport({ report, onCopy }) {
       </Section>
 
       <p className="mt-8 border-t border-border pt-4 text-xs text-muted-foreground">
-        This report summarizes automated heuristic checks on the fetched page. "No threats detected" is NOT a guarantee of safety.
+        This report summarizes automated heuristic checks on the fetched page. "No threats detected" is NOT a guarantee of safety. Preview availability depends on the target site's own embedding policy.
       </p>
     </div>
   );
