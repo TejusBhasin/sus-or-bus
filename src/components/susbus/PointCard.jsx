@@ -65,9 +65,6 @@ export default function PointCard({ point, mode = 'nerd' }) {
           </div>
         )}
 
-        {!showTech && tech === simple && (
-          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{simple}</p>
-        )}
       </div>
     </div>
   );

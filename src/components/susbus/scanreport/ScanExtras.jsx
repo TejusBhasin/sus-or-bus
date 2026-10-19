@@ -1,7 +1,7 @@
 import React from 'react';
 import RiskVectors from './RiskVectors';
 import KeyObservations from './KeyObservations';
-import FindingCard from './FindingCard';
+import ScoreLedger from './ScoreLedger';
 import TechnicalDetails from './TechnicalDetails';
 
 const CHIPS = [
@@ -22,7 +22,7 @@ function chip(state) {
 
 const card = 'rounded-2xl border border-border bg-card/60 p-5';
 
-export default function ScanExtras({ scan }) {
+export default function ScanExtras({ scan, score, verdict }) {
   const checked = scan.checkedAt ? new Date(scan.checkedAt).toLocaleString() : '';
   return (
     <div className="space-y-6 mb-6">
@@ -38,15 +38,7 @@ export default function ScanExtras({ scan }) {
       </div>
       <RiskVectors vectors={scan.vectors} confidence={scan.confidence} />
       <KeyObservations observations={scan.observations} actions={scan.actions} />
-      {scan.findings?.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">Point impact</p>
-          {scan.findings.map((f, i) => (
-            <FindingCard key={i} level={f.level} category={f.category} title={f.title} summary={f.summary} impact={f.impact}
-              evidence={f.evidence} whyItMatters={f.whyItMatters} recommendation={f.recommendation} source={f.source} />
-          ))}
-        </div>
-      )}
+      {scan.findings?.length > 0 && <ScoreLedger findings={scan.findings} score={score} verdict={verdict} />}
       <TechnicalDetails headers={scan.headers} chain={scan.chain} />
     </div>
   );

@@ -14,9 +14,11 @@ const LEVEL = {
   bad: { text: 'text-red-600 dark:text-red-400', border: 'border-l-red-500' }
 };
 
-export default function FindingCard({ level, category, title, summary, impact, evidence, whyItMatters, recommendation, source }) {
+export default function FindingCard({ level, category, title, summary, impact, delta, running, evidence, whyItMatters, recommendation, source }) {
   const style = LEVEL[level] || LEVEL.good;
-  const pts = impact > 0 ? `-${impact} pts` : '0 pts';
+  const d = delta !== undefined ? delta : -(impact || 0);
+  const pts = `${d > 0 ? '+' : ''}${d} pts${running !== undefined ? ` → ${running}` : ''}`;
+  impact = d < 0 ? 1 : 0;
   return (
     <div className={`rounded-lg border border-border border-l-4 ${style.border} bg-card p-4`}>
       <div className="flex items-center justify-between gap-3">

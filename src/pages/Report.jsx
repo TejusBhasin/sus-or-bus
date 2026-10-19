@@ -314,7 +314,7 @@ export default function Report() {
           </div>
         </div>
 
-        {report.scan && <ScanExtras scan={report.scan} />}
+        {report.scan && <ScanExtras scan={report.scan} score={report.score} verdict={report.verdict} />}
 
         {/* Safer alternatives for SUS websites */}
         {report.input_type === 'url' && report.url && !isBus && (

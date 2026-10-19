@@ -34,14 +34,14 @@ let phrasesCache = null;
 async function loadVariations(base44) {
   if (phrasesCache) return phrasesCache;
   try {
-    let items = [];
-    try {
-      const res = await base44.asServiceRole.entities.ResultVariation.filter({}, '-created_date', 1000);
-      items = Array.isArray(res) ? res : res && res.items ? res.items : [];
-    } catch {
-      const res = await base44.asServiceRole.entities.ResultVariation.filter({}, { limit: 1000 });
-      items = res && res.items ? res.items : Array.isArray(res) ? res : [];
-    }
+    const items = [];
+    let cursor;
+    do {
+      const page = await base44.asServiceRole.entities.ResultVariation.filter({}, '-created_date', 5000);
+      if (Array.isArray(page)) { items.push(...page); break; }
+      items.push(...(page.items || []));
+      cursor = page.has_more ? page.next_cursor : null;
+    } while (cursor);
     const grouped = {};
     for (const item of items) {
       if (!item.category || !item.text) continue;
@@ -179,7 +179,8 @@ export default async function(req) {
           simple_description: f.simple || f.summary
         }));
         const verdict = scan.verdict === 'BUS' ? 'bus' : 'sus';
-        const seed = 'url:' + url + ':' + scan.findings.map((f) => f.id).join(',');
+        // checkedAt makes the wording rotate on every scan of the same site
+        const seed = 'url:' + url + ':' + scan.findings.map((f) => f.id).join(',') + ':' + scan.checkedAt;
         const phrases = await loadVariations(base44);
         const summaries = buildSummaries(points, verdict, seed, phrases, 'site');
         const trackers = scan.analysis.trackers || [];
@@ -420,7 +421,7 @@ export default async function(req) {
     // --- score, summarize, save ---
     const result = scoreFindings(findings);
     const phrases = await loadVariations(base44);
-    const seed = inputType === 'url' ? 'url:' + url : inputType + ':' + content.slice(0, 200);
+    const seed = (inputType === 'url' ? 'url:' + url : inputType + ':' + content.slice(0, 200)) + ':' + new Date().toISOString();
     const kind =
       inputType === 'url' ? 'site' : inputType === 'document' ? 'document' : inputType === 'email' ? 'message' : 'input';
     const summaries = buildSummaries(result.points, result.verdict, seed, phrases, kind);
