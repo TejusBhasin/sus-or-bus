@@ -242,12 +242,26 @@ export default async function(req) {
           confidence: syn.confidenceScore,
           actions: syn.actionableRecommendations,
           guidance: scan.verdictDetails.summary,
+          badge: syn.badge,
+          headline: syn.headline,
+          paragraphs: syn.paragraphs,
+          executiveSummary: syn.executiveSummary,
+          keyTakeaways: syn.keyTakeaways,
+          riskProfile: syn.riskProfile,
+          calibration: syn.skepticismCalibration,
+          verdictDetails: scan.verdictDetails,
+          headers: scan.headers,
+          chain: scan.chain || [],
           trackers: details.trackers,
           findings: scan.findings.map((f) => ({
             title: f.title,
             level: f.level,
             category: f.category,
             summary: f.summary,
+            evidence: f.evidence || '',
+            whyItMatters: f.whyItMatters || '',
+            recommendation: f.recommendation || '',
+            source: f.source || '',
             impact: f.impact || 0
           }))
         };

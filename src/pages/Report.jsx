@@ -22,6 +22,7 @@ import Footer from '@/components/susbus/Footer';
 import AnalyzingLoader from '@/components/susbus/AnalyzingLoader';
 import SiteOwnerFixPrompt from '@/components/susbus/SiteOwnerFixPrompt';
 import UrlScanReport from '@/components/susbus/scanreport/UrlScanReport';
+import ShareButtons from '@/components/susbus/ShareButtons';
 import { analyzeContent } from '@/functions/analyzeContent';
 import { setPendingReport, getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
 
@@ -187,6 +188,7 @@ export default function Report() {
       <div className="min-h-screen bg-background text-foreground pt-safe">
         <div className="max-w-3xl mx-auto px-4 py-6 pb-safe">
           <UrlScanReport report={report} onCopy={handleCopyVerdict} />
+          <div className="mt-6"><ShareButtons report={report} /></div>
           {report.verdict !== 'bus' && <div className="mt-6"><AlternativesCard url={report.url} /></div>}
           <div className="mt-6"><SiteOwnerFixPrompt report={report} /></div>
         </div>
@@ -300,6 +302,9 @@ export default function Report() {
               <Download className="w-3.5 h-3.5 mr-1.5" />
               {t('export_pdf')}
             </Button>
+          </div>
+          <div className="mt-5">
+            <ShareButtons report={report} />
           </div>
         </div>
 

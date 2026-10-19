@@ -4,6 +4,7 @@ import RiskVectors from './RiskVectors';
 import CountBoxes from './CountBoxes';
 import KeyObservations from './KeyObservations';
 import FindingCard from './FindingCard';
+import TechnicalDetails from './TechnicalDetails';
 
 function Section({ title, children }) {
   return (
@@ -20,6 +21,13 @@ export default function UrlScanReport({ report, onCopy }) {
   const host = scan.site || report.url;
   const trackers = scan.trackers || [];
   const policyPoints = report.terms_privacy?.points || [];
+  const paragraphs =
+    scan.paragraphs && scan.paragraphs.length
+      ? scan.paragraphs
+      : scan.executiveSummary
+        ? String(scan.executiveSummary).split('\n\n')
+        : [];
+  const verdictTone = isBus ? 'text-emerald-400' : 'text-red-400';
 
   return (
     <div className="dark rounded-2xl border border-border bg-background text-foreground p-5 sm:p-8 select-text">
@@ -38,7 +46,48 @@ export default function UrlScanReport({ report, onCopy }) {
       <h2 className="mt-8 mb-3 text-lg font-bold uppercase tracking-wider">Sus or Bus — Site Safety Report</h2>
       <ScanHeader report={report} scan={scan} onCopy={onCopy} />
 
-      <p className="mt-5 text-sm text-muted-foreground leading-relaxed">{report.summary}</p>
+      {scan.badge && (
+        <p className="mt-5 flex flex-wrap items-center gap-2">
+          <span className="rounded border border-indigo-500/40 bg-indigo-500/10 px-2 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-400">
+            {scan.badge}
+          </span>
+          {scan.calibration && (
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">{scan.calibration}</span>
+          )}
+        </p>
+      )}
+
+      {scan.headline && <p className="mt-3 text-lg font-bold text-foreground">{scan.headline}</p>}
+
+      {paragraphs.length > 0 && (
+        <div className="mt-4 space-y-3 text-sm leading-relaxed text-foreground/90">
+          {paragraphs.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+      )}
+
+      {scan.keyTakeaways?.length > 0 && (
+        <Section title="Key takeaways">
+          <ul className="space-y-1.5 text-sm text-foreground">
+            {scan.keyTakeaways.map((k, i) => <li key={i}>• {k}</li>)}
+          </ul>
+        </Section>
+      )}
+
+      {scan.verdictDetails && (
+        <Section title="Verdict detail">
+          <p className={`text-sm font-bold uppercase tracking-wider ${verdictTone}`}>
+            {scan.verdictDetails.code} — {scan.verdictDetails.label}
+          </p>
+          {scan.verdictDetails.summary && (
+            <p className="mt-2 text-sm text-foreground/90">{scan.verdictDetails.summary}</p>
+          )}
+          {scan.verdictDetails.explanation && (
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{scan.verdictDetails.explanation}</p>
+          )}
+        </Section>
+      )}
+
+      <p className="mt-6 text-sm text-muted-foreground leading-relaxed">{report.summary}</p>
 
       <div className="mt-5"><RiskVectors vectors={scan.vectors} confidence={scan.confidence} /></div>
       <div className="mt-5"><CountBoxes counts={scan.counts} score={report.score} /></div>
@@ -77,10 +126,23 @@ export default function UrlScanReport({ report, onCopy }) {
       <Section title="The breakdown">
         <div className="space-y-3">
           {(scan.findings || []).map((f, i) => (
-            <FindingCard key={i} level={f.level} category={f.category} title={f.title} summary={f.summary} impact={f.impact} />
+            <FindingCard
+              key={i}
+              level={f.level}
+              category={f.category}
+              title={f.title}
+              summary={f.summary}
+              impact={f.impact}
+              evidence={f.evidence}
+              whyItMatters={f.whyItMatters}
+              recommendation={f.recommendation}
+              source={f.source}
+            />
           ))}
         </div>
       </Section>
+
+      <TechnicalDetails headers={scan.headers} chain={scan.chain} />
 
       <p className="mt-8 border-t border-border pt-4 text-xs text-muted-foreground">
         This report summarizes automated heuristic checks on the fetched page. "No threats detected" is NOT a guarantee of safety. Preview availability depends on the target site's own embedding policy.
