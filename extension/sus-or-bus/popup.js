@@ -4,8 +4,8 @@
 // pause. Reads/writes chrome.storage directly; the background worker checks
 // the pause keys (sb_paused_until / sb_session_paused) before every scan.
 
-const REPORT_BASE = 'https://susbus.base44.app/report/';
-const SITE_URL = 'https://susbus.base44.app/';
+const REPORT_BASE = 'https://susorbus.com/report/';
+const SITE_URL = 'https://susorbus.com/';
 const $ = (id) => document.getElementById(id);
 
 let currentPause = 0; // ms timestamp the extension is paused until

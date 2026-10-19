@@ -9,7 +9,7 @@
   if (window.__susbusContent) return;
   window.__susbusContent = true;
 
-  const REPORT_BASE = 'https://susbus.base44.app/report/';
+  const REPORT_BASE = 'https://susorbus.com/report/';
   const HERE = location.origin;
 
   let host = null;
@@ -18,6 +18,52 @@
   let pendingUrl = null;
   let pendingMode = 'same'; // 'same' | 'blank'
   let pendingReportId = null;
+
+  // Safety facts shown while a check runs — the same list the site's
+  // loading screen rotates through.
+  const FUN_FACTS = [
+    'Phishing emails are opened more often on mobile than on desktop — always double-check the sender.',
+    'HTTPS means the connection is encrypted. It does NOT mean the site is honest — scammers use HTTPS too.',
+    'Lookalike domains like "paypa1.com" or "amazon-security.net" are classic phishing tricks.',
+    'Urgent wording ("Act now!", "Your account will be closed") is a pressure tactic — scammers want you to skip thinking.',
+    'Legitimate companies never ask for your password or full card number over email or chat.',
+    'Shortened links hide their true destination — preview them before you click.',
+    'A padlock icon only means encrypted traffic, not a verified business.',
+    'Fake online shops often use prices that are too good to be true — because they are.',
+    'Password reuse is one of the biggest risks: one breach can unlock many of your accounts.',
+    'Two-factor authentication blocks the vast majority of automated account takeovers.',
+    'Scammers can spoof caller ID and email sender addresses — the display name can lie.',
+    'QR codes can lead anywhere. Check the URL before opening it in your browser.',
+    'Public Wi-Fi is convenient for attackers too — avoid sensitive logins on it.',
+    'Perfect grammar does not mean safe: modern scams are professionally written.',
+    'Attachment extensions like ".exe", ".scr" or ".js" in emails are almost never good news.'
+  ];
+  let factTimer = null;
+
+  function stopFacts() {
+    if (factTimer) {
+      clearInterval(factTimer);
+      factTimer = null;
+    }
+  }
+
+  // Fill the fact line and rotate it every 5 seconds while the user waits.
+  function startFacts() {
+    stopFacts();
+    const el = shadow && shadow.querySelector('.sb-fact');
+    if (!el) return;
+    let i = Math.floor(Math.random() * FUN_FACTS.length);
+    el.textContent = FUN_FACTS[i];
+    factTimer = setInterval(() => {
+      const next = shadow && shadow.querySelector('.sb-fact');
+      if (!next) {
+        stopFacts();
+        return;
+      }
+      i = (i + 1) % FUN_FACTS.length;
+      next.textContent = FUN_FACTS[i];
+    }, 5000);
+  }
 
   const CSS = `
     .sb-card {
@@ -89,6 +135,7 @@
     .sb-btn.alt-main:hover { background: rgba(52, 211, 153, 0.24); }
     .sb-scan { display: flex; align-items: center; gap: 10px; color: #cbd5e1; padding: 8px 0 2px; }
     .sb-spin { width: 16px; height: 16px; border: 2px solid rgba(148,163,184,0.35); border-top-color: #e2e8f0; border-radius: 50%; animation: sb-rot 0.8s linear infinite; flex: none; }
+    .sb-fact { margin-top: 10px; color: #94a3b8; font-size: 12px; line-height: 1.5; animation: sb-fade 0.3s ease-out; }
     @keyframes sb-rot { to { transform: rotate(360deg); } }
     .sb-anyway { margin-top: 10px; text-align: center; }
     .sb-link { color: #818cf8; cursor: pointer; text-decoration: none; font-size: 12px; }
@@ -221,6 +268,7 @@
   }
 
   function renderCard(bodyHtml) {
+    stopFacts(); // a new card ends any running fact rotation
     ensurePopup();
     const old = shadow.querySelector('.sb-take') || shadow.querySelector('.sb-card');
     if (old) old.remove();
@@ -300,9 +348,11 @@
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
         <div class="sb-scan"><span class="sb-spin"></span><span>Checking this site…</span></div>
+        <div class="sb-fact"></div>
         <div class="sb-anyway"><a class="sb-link" data-act="go">Open without waiting</a></div>
       </div>
     `);
+    startFacts();
     chrome.runtime
       .sendMessage({ type: 'sb:check', url })
       .then((res) => {
@@ -357,9 +407,11 @@
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
         <div class="sb-scan"><span class="sb-spin"></span><span>Checking this site before you browse it…</span></div>
+        <div class="sb-fact"></div>
         <div class="sb-anyway"><a class="sb-link" data-act="dismiss">Open without waiting</a></div>
       </div>
     `);
+    startFacts();
   }
 
   function renderTakeoverResult(url, d) {
@@ -402,8 +454,10 @@
       <div class="sb-body">
         <div class="sb-url">${escapeHtml(shortUrl(url))}</div>
         <div class="sb-scan"><span class="sb-spin"></span><span>Looking for safer alternatives…</span></div>
+        <div class="sb-fact"></div>
       </div>
     `);
+    startFacts();
     chrome.runtime
       .sendMessage({ type: 'sb:alternatives', url })
       .then((res) => {

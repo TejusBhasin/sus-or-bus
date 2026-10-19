@@ -3,12 +3,14 @@
 // direct navigations (typed address, bookmark, pinned tab) behind a
 // full-screen report shown by the content script.
 
-const ENDPOINT = 'https://susbus.base44.app/functions/analyzeContent';
-const ALT_ENDPOINT = 'https://susbus.base44.app/functions/findAlternatives';
-const REGISTER_ENDPOINT = 'https://susbus.base44.app/functions/registerAccount';
-const LOGIN_ENDPOINT = 'https://susbus.base44.app/functions/loginAccount';
-const LISTS_ENDPOINT = 'https://susbus.base44.app/functions/accountLists';
-const APP_ORIGIN = 'https://susbus.base44.app';
+// All extension traffic goes to the Sus or Bus app itself — one origin to
+// change if the app ever moves.
+const APP_ORIGIN = 'https://susorbus.com';
+const ENDPOINT = APP_ORIGIN + '/functions/analyzeContent';
+const ALT_ENDPOINT = APP_ORIGIN + '/functions/findAlternatives';
+const REGISTER_ENDPOINT = APP_ORIGIN + '/functions/registerAccount';
+const LOGIN_ENDPOINT = APP_ORIGIN + '/functions/loginAccount';
+const LISTS_ENDPOINT = APP_ORIGIN + '/functions/accountLists';
 const FRESH_MS = 7 * 24 * 60 * 60 * 1000; // re-scan a site after 7 days
 const MAX_ENTRIES = 500;
 const ALLOW_MS = 30 * 1000; // a "continue" is honored for 30s so the next page passes the gate
