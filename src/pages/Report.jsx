@@ -21,7 +21,7 @@ import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
 import AnalyzingLoader from '@/components/susbus/AnalyzingLoader';
 import SiteOwnerFixPrompt from '@/components/susbus/SiteOwnerFixPrompt';
-import UrlScanReport from '@/components/susbus/scanreport/UrlScanReport';
+import ScanExtras from '@/components/susbus/scanreport/ScanExtras';
 import ShareButtons from '@/components/susbus/ShareButtons';
 import { analyzeContent } from '@/functions/analyzeContent';
 import { setPendingReport, getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
@@ -183,25 +183,6 @@ export default function Report() {
     );
   }
 
-  if (report.input_type === 'url' && report.scan) {
-    return (
-      <div className="min-h-screen bg-background text-foreground pt-safe">
-        <div className="max-w-3xl mx-auto px-4 py-6 pb-safe">
-          <UrlScanReport report={report} onCopy={handleCopyVerdict} />
-          <div className="mt-6"><ShareButtons report={report} /></div>
-          {report.verdict !== 'bus' && <div className="mt-6"><AlternativesCard url={report.url} /></div>}
-          <div className="mt-6"><SiteOwnerFixPrompt report={report} /></div>
-        </div>
-        {toast && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-popover text-popover-foreground px-4 py-2 text-sm shadow-xl flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-500" />
-            {toast}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   const isBus = report.verdict === 'bus';
   const Icon = typeIcon[report.input_type] || FileText;
   const d = report.details || {};
@@ -332,6 +313,8 @@ export default function Report() {
             <span className="text-xs uppercase tracking-wider text-muted-foreground font-mono">bad</span>
           </div>
         </div>
+
+        {report.scan && <ScanExtras scan={report.scan} />}
 
         {/* Safer alternatives for SUS websites */}
         {report.input_type === 'url' && report.url && !isBus && (
