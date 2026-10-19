@@ -1011,7 +1011,8 @@ export function buildSummaries(points, verdict, seed, phrases, kind) {
   const bad = points.filter((p) => p.severity === 'bad');
   const warn = points.filter((p) => p.severity === 'warning');
   const good = points.filter((p) => p.severity === 'good');
-  const lead = points.slice(0, 3).map((p) => p.title.toLowerCase()).join('; ');
+  const leadPool = verdict === 'bus' ? [...good, ...warn, ...bad] : [...bad, ...warn, ...good];
+  const lead = leadPool.slice(0, 3).map((p) => p.title.toLowerCase()).join('; ');
   const subject = kind || 'input';
   const seedStr = seed || 'scan';
 

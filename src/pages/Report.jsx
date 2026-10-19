@@ -21,6 +21,7 @@ import ThemeToggle from '@/components/susbus/ThemeToggle';
 import Footer from '@/components/susbus/Footer';
 import AnalyzingLoader from '@/components/susbus/AnalyzingLoader';
 import SiteOwnerFixPrompt from '@/components/susbus/SiteOwnerFixPrompt';
+import UrlScanReport from '@/components/susbus/scanreport/UrlScanReport';
 import { analyzeContent } from '@/functions/analyzeContent';
 import { setPendingReport, getPendingReport, clearPendingReport, setAnalyzeError } from '@/lib/pendingReport';
 
@@ -177,6 +178,24 @@ export default function Report() {
         <Link to="/">
           <Button className="mt-4">{t('back_home')}</Button>
         </Link>
+      </div>
+    );
+  }
+
+  if (report.input_type === 'url' && report.scan) {
+    return (
+      <div className="min-h-screen bg-background text-foreground pt-safe">
+        <div className="max-w-3xl mx-auto px-4 py-6 pb-safe">
+          <UrlScanReport report={report} onCopy={handleCopyVerdict} />
+          {report.verdict !== 'bus' && <div className="mt-6"><AlternativesCard url={report.url} /></div>}
+          <div className="mt-6"><SiteOwnerFixPrompt report={report} /></div>
+        </div>
+        {toast && (
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 rounded-lg border border-border bg-popover text-popover-foreground px-4 py-2 text-sm shadow-xl flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-500" />
+            {toast}
+          </div>
+        )}
       </div>
     );
   }

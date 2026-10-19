@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { normalizeUrl, safeFetch } from '../../shared/urlSafety.ts';
+import { runFullScan } from '../../shared/scan/site.ts';
 import {
   findPolicyLinks,
   analyzeDomain,
@@ -162,7 +163,125 @@ export default async function(req) {
         });
       }
 
-      // --- fetch the page (SSRF-safe, redirect-validated, byte-capped) ---
+      // --- heuristic engine (headers, trackers, policies, vectors) ---
+      let scan = null;
+      try {
+        scan = await runFullScan(url);
+      } catch (e) {
+        console.log('heuristic scan failed, using basic pipeline:', String(e && e.message));
+      }
+      if (scan) {
+        const points = scan.findings.map((f) => ({
+          title: f.title,
+          severity: f.level,
+          category: f.category,
+          description: f.summary,
+          simple_description: f.simple || f.summary
+        }));
+        const verdict = scan.verdict === 'BUS' ? 'bus' : 'sus';
+        const seed = 'url:' + url + ':' + scan.findings.map((f) => f.id).join(',');
+        const phrases = await loadVariations(base44);
+        const summaries = buildSummaries(points, verdict, seed, phrases, 'site');
+        const trackers = scan.analysis.trackers || [];
+        const details = {
+          ...emptyDetails(),
+          title: '',
+          trackers: trackers.map((t) => t.provider || t.domain || String(t)),
+          redFlags: points.filter((p) => p.severity === 'bad').map((p) => p.title),
+          greenFlags: points.filter((p) => p.severity === 'good').map((p) => p.title)
+        };
+        const termsPrivacy = {
+          found: (scan.policies || []).filter((p) => p.ok).map((p) => p.kind),
+          summary: scan.termsFindings.length ? scan.termsFindings[0].summary : '',
+          simple_summary: scan.termsFindings.length ? scan.termsFindings[0].summary : '',
+          points: scan.termsFindings.map((f) => ({
+            title: f.title,
+            severity: f.level,
+            description: f.summary,
+            simple_description: f.simple || f.summary
+          }))
+        };
+        const syn = scan.aiSynthesis;
+        const ids = new Set(scan.findings.map((f) => f.id));
+        const isHttps = scan.url.startsWith('https:');
+        const noPolicy = ids.has('POL_POLICY_NONE_FOUND');
+        const observations = [
+          !isHttps
+            ? { label: 'Transport', tone: 'bad', text: 'Connection is unencrypted HTTP; traffic can be read or altered in transit' }
+            : ids.has('SEC_HEADER_HSTS_STRONG')
+              ? { label: 'Transport', tone: 'good', text: 'TLS encryption strictly enforced with long-duration HSTS' }
+              : { label: 'Transport', tone: 'warning', text: 'TLS encryption active, but HSTS is not strictly enforced' },
+          ids.has('SEC_FORM_PASSWORD_CROSS_ORIGIN')
+            ? { label: 'Forms & Input', tone: 'bad', text: 'Password fields submit credentials to a different origin' }
+            : ids.has('SEC_FORM_PASSWORD_DETECTED')
+              ? { label: 'Forms & Input', tone: 'warning', text: 'Password input fields present; they submit to the same origin' }
+              : { label: 'Forms & Input', tone: 'good', text: 'No credential or password input fields detected on page' },
+          trackers.length === 0
+            ? { label: 'Telemetry', tone: 'good', text: 'Zero third-party trackers or advertising beacons detected' }
+            : { label: 'Telemetry', tone: 'warning', text: `${trackers.length} third-party tracker${trackers.length === 1 ? '' : 's'} or analytics service${trackers.length === 1 ? '' : 's'} detected` },
+          noPolicy
+            ? { label: 'Governance', tone: 'warning', text: 'No privacy policy or terms of service documentation found' }
+            : ids.has('POL_TRACKER_DISCLOSURE_GAP')
+              ? { label: 'Governance', tone: 'warning', text: 'Privacy documentation does not disclose the trackers found on the page' }
+              : { label: 'Governance', tone: 'good', text: 'Privacy and terms documentation found and reachable' },
+          { label: 'Guidance', tone: verdict === 'bus' ? 'good' : 'bad', text: summaries.simpleSummary }
+        ];
+        const policyNote = noPolicy
+          ? 'No terms or privacy links detected on the page.'
+          : `Reviewed: ${(scan.policies || []).filter((p) => p.ok).map((p) => p.kind).join(', ') || 'linked policy pages'}.`;
+        const scanData = {
+          observations,
+          policyNote,
+          site: scan.site,
+          url: scan.url,
+          status: scan.status,
+          checkedAt: scan.checkedAt,
+          counts: scan.counts,
+          vectors: scan.vectors,
+          coverage: scan.coverage,
+          confidence: syn.confidenceScore,
+          actions: syn.actionableRecommendations,
+          guidance: scan.verdictDetails.summary,
+          trackers: details.trackers,
+          findings: scan.findings.map((f) => ({
+            title: f.title,
+            level: f.level,
+            category: f.category,
+            summary: f.summary,
+            impact: f.impact || 0
+          }))
+        };
+        const saved = await base44.asServiceRole.entities.Report.create({
+          input_type: 'url',
+          input_content: url,
+          url: scan.url,
+          verdict,
+          score: scan.score,
+          summary: summaries.summary,
+          simple_summary: summaries.simpleSummary,
+          points,
+          details,
+          preview_title: '',
+          preview_description: '',
+          source_code: scan.source || '',
+          terms_privacy: termsPrivacy,
+          scan: scanData
+        });
+        return Response.json({
+          verdict,
+          score: scan.score,
+          summary: summaries.summary,
+          simple_summary: summaries.simpleSummary,
+          points,
+          details,
+          preview: { title: '', description: '', status: scan.status, finalUrl: scan.url, fetchError: '' },
+          sourceCode: scan.source || '',
+          terms_privacy: termsPrivacy,
+          reportId: saved.id
+        });
+      }
+
+      // --- fallback: basic fetch (SSRF-safe, redirect-validated, byte-capped) ---
       const fetchResult = await safeFetch(url, { maxBytes: PAGE_MAX_BYTES, timeoutMs: 15000 });
       let pageHtml = '';
       let isHttps = norm.protocol === 'https:';

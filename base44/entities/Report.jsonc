@@ -161,6 +161,10 @@
     },
     "source_code": {
       "type": "string"
+    },
+    "scan": {
+      "type": "object",
+      "description": "Full heuristic-engine result for URL scans (vectors, coverage, key observations, improvement actions, findings with point impact)"
     }
   },
   "required": [

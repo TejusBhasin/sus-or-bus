@@ -1,11 +1,8 @@
 // Ported from https://github.com/TejusBhasin/SusOrBus-Basic-HC-Capitol (sus-or-bus/lib/fetcher.js)
-// Layer B: Pinned Safe Network Fetcher.
+// Layer B: Safe Network Fetcher.
 
-import http from "node:http";
-import https from "node:https";
-import zlib from "node:zlib";
 import { normalizeUrl } from "./url.ts";
-import { resolveAndValidate, DnsSecurityError } from "./dns.ts";
+import { resolveAndValidate } from "./dns.ts";
 
 export const MAX_HTML_BYTES = 1_000_000; // 1 MB
 export const MAX_REDIRECTS = 5;
@@ -20,136 +17,81 @@ export class FetchSecurityError extends Error {
 }
 
 /**
- * Performs a single secure HTTP/HTTPS request pinned to a validated public IP address.
+ * Performs a single HTTP/HTTPS request. The hostname has already been resolved
+ * and validated as public (and is re-validated on every redirect hop). The
+ * Deno runtime cannot pin the socket to the validated IP, so the platform
+ * fetch is used with manual redirects and a hard byte cap.
  */
-function requestSingle(parsedUrl, pinnedAddress, options = {}) {
+async function requestSingle(parsedUrl, pinnedAddress, options = {}) {
   const timeoutMs = options.timeoutMs || DEFAULT_TIMEOUT_MS;
-  const isHttps = parsedUrl.protocol === "https:";
-  const client = isHttps ? https : http;
-  const port = parsedUrl.port ? Number.parseInt(parsedUrl.port, 10) : (isHttps ? 443 : 80);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  return new Promise((resolve, reject) => {
-    let timer = null;
-    let finished = false;
-
-    const cleanup = () => {
-      if (timer) clearTimeout(timer);
-      finished = true;
-    };
-
-    const reqOptions = {
-      protocol: parsedUrl.protocol,
-      hostname: parsedUrl.hostname,
-      port: port,
-      path: (parsedUrl.pathname || "/") + (parsedUrl.search || ""),
-      method: "GET",
-      // Pin connection to validated IP address to prevent DNS rebinding
-      lookup: (_host, lookupOpts, cb) => {
-        if (lookupOpts && lookupOpts.all) {
-          cb(null, [{ address: pinnedAddress.address, family: pinnedAddress.family }]);
-        } else {
-          cb(null, pinnedAddress.address, pinnedAddress.family);
+  try {
+    let response;
+    try {
+      response = await fetch(parsedUrl.href, {
+        method: "GET",
+        redirect: "manual",
+        signal: controller.signal,
+        headers: {
+          "User-Agent": "SusOrBus-Scanner/2.0 (+https://github.com/TejusBhasin/SusOrBus)",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.5"
         }
-      },
-      headers: {
-        "User-Agent": "SusOrBus-Scanner/2.0 (+https://github.com/TejusBhasin/SusOrBus)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Host": parsedUrl.host,
-        "Connection": "close"
+      });
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new FetchSecurityError(`Request timed out after ${timeoutMs}ms.`, "REQUEST_TIMEOUT");
       }
-    };
-
-    if (isHttps) {
-      reqOptions.servername = parsedUrl.hostname;
+      throw new FetchSecurityError(`Network error connecting to ${parsedUrl.hostname}: ${err.message}`, "NETWORK_ERROR");
     }
 
-    const req = client.request(reqOptions, response => {
-      const statusCode = response.statusCode || 0;
-      const headers = response.headers || {};
-      const location = headers.location || null;
-      const encoding = (headers["content-encoding"] || "").toLowerCase();
-      const contentType = (headers["content-type"] || "").toLowerCase();
+    const headers = {};
+    response.headers.forEach((value, key) => {
+      headers[key.toLowerCase()] = value;
+    });
 
-      // Decompression stream setup with byte-counting guard
-      let stream = response;
-      if (encoding === "gzip" || encoding === "x-gzip") {
-        const gunzip = zlib.createGunzip();
-        stream = response.pipe(gunzip);
-      } else if (encoding === "deflate") {
-        const inflate = zlib.createInflate();
-        stream = response.pipe(inflate);
-      } else if (encoding === "br") {
-        const brotli = zlib.createBrotliDecompress();
-        stream = response.pipe(brotli);
-      }
-
-      const chunks = [];
-      let totalBytes = 0;
-      let truncated = false;
-
-      stream.on("data", chunk => {
-        if (finished) return;
-        totalBytes += chunk.length;
-        if (totalBytes <= MAX_HTML_BYTES) {
-          chunks.push(chunk);
-        } else {
+    const chunks = [];
+    let totalBytes = 0;
+    let truncated = false;
+    if (response.body) {
+      const reader = response.body.getReader();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        totalBytes += value.length;
+        if (totalBytes > MAX_HTML_BYTES) {
           truncated = true;
-          req.destroy();
-          cleanup();
-          const bodyBuffer = Buffer.concat(chunks);
-          resolve({
-            status: statusCode,
-            location,
-            headers,
-            contentType,
-            body: bodyBuffer.toString("utf8"),
-            truncated: true,
-            ip: pinnedAddress.address
-          });
+          chunks.push(value.slice(0, Math.max(0, value.length - (totalBytes - MAX_HTML_BYTES))));
+          await reader.cancel();
+          break;
         }
-      });
+        chunks.push(value);
+      }
+    }
+    const merged = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+    let offset = 0;
+    for (const c of chunks) {
+      merged.set(c, offset);
+      offset += c.length;
+    }
 
-      stream.on("end", () => {
-        if (finished) return;
-        cleanup();
-        const bodyBuffer = Buffer.concat(chunks);
-        resolve({
-          status: statusCode,
-          location,
-          headers,
-          contentType,
-          body: bodyBuffer.toString("utf8"),
-          truncated,
-          ip: pinnedAddress.address
-        });
-      });
-
-      stream.on("error", err => {
-        if (finished) return;
-        cleanup();
-        reject(new FetchSecurityError(`Decompression or stream error: ${err.message}`, "STREAM_ERROR"));
-      });
-    });
-
-    timer = setTimeout(() => {
-      cleanup();
-      req.destroy();
-      reject(new FetchSecurityError(`Request timed out after ${timeoutMs}ms.`, "REQUEST_TIMEOUT"));
-    }, timeoutMs);
-
-    req.on("error", err => {
-      if (finished) return;
-      cleanup();
-      reject(new FetchSecurityError(`Network error connecting to ${parsedUrl.hostname}: ${err.message}`, "NETWORK_ERROR"));
-    });
-
-    req.end();
-  });
+    return {
+      status: response.status,
+      location: headers.location || null,
+      headers,
+      contentType: (headers["content-type"] || "").toLowerCase(),
+      body: new TextDecoder("utf-8").decode(merged),
+      truncated,
+      ip: pinnedAddress.address
+    };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
- * Safely fetches a web page with full SSRF protection, strict redirect validation,
+ * Safely fetches a web page with SSRF protection, strict redirect validation,
  * response bounds, and timeouts.
  */
 export async function safeFetchPage(inputUrl, options = {}) {
