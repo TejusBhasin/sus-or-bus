@@ -27,7 +27,7 @@ corner with **Continue / Cancel**.
   first time). Ratings are cached for 7 days per site.
 - **Mini findings:** the popup shows the verdict (Valid / Not Valid), the score,
   the top findings in plain language, and a link to the full report on
-  susbus.base44.app.
+  susorbus.com.
 
 ## Files
 

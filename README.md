@@ -4,7 +4,7 @@
 
 Sus or Bus checks links, emails, code, documents, and plain text for scams, phishing, and other sketchy behavior — then gives you one honest verdict: **BUS** (safe, legit) or **SUS** (suspicious, unsafe).
 
-Try it live at **https://susbus.base44.app**
+Try it live at **https://susorbus.com**
 
 <img width="1470" height="800" alt="Screenshot 2026-09-28 at 9 05 27 PM" src="https://github.com/user-attachments/assets/4303d81a-777e-428b-b018-8ff14b9d8316" />
 
