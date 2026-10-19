@@ -4,6 +4,12 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Prevent duplicate React instances: always resolve react/react-dom
+  // to the single copy in node_modules, even when chunks come from
+  // different optimized deps generations.
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   plugins: [
     base44({
       // Support for legacy code that imports the base44 SDK with @/integrations, @/entities, etc.
