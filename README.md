@@ -1,4 +1,4 @@
-# Sus or Bus
+## Sus or Bus
 
 **Is it bussin, or is it sus?**
 
