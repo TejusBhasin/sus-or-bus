@@ -30,11 +30,7 @@ Every report gives you:
 - **safer alternatives** — 3–5 reputable sites suggested when a site is rated SUS
 - shareable links, PDF export, and one-click re-scan
 
-Every scan costs money (it sends the content to an AI model), so a few things keep it fast and cheap:
-
-- **7-day shared cache** — a URL scanned by anyone in the last week returns instantly for everyone
-- **trusted domains** — well-known sites like Google or Wikipedia are never scanned at all
-- **30-day alternatives cache** — repeated "find a safer site" lookups are free
+Every scan does NOT cost money because it uses a weighted algorithm (Instead of an AI)
 
 ## The browser extension
 
@@ -52,56 +48,7 @@ The extension (Chrome + Safari, in `extension/`) brings the same checks to your 
 3. Otherwise the page is fetched and its HTML is sent to an LLM, which returns a structured verdict (score, findings, details) as JSON
 4. The result is saved as a `Report` record and the frontend renders it (`src/pages/Report.jsx`)
 
-Account sync is its own little system: the website and the extension each hold the user's whitelist/blacklist, and the `accountLists` function merges the two sides without losing changes from either one (see the comments in `base44/functions/accountLists/entry.ts`).
-
-## Run it locally
-
-You need Node 18 or newer.
-
-```bash
-git clone https://github.com/TejusBhasin/sus-or-bus.git
-cd sus-or-bus
-npm install
-npm run dev
-```
-
-The frontend runs on the localhost URL Vite prints. The safety-analysis functions live on the app's hosted backend, so scans work out of the box — no API keys or setup needed.
-
-To try the browser extension:
-
-1. Open `chrome://extensions` and turn on **Developer mode**
-2. Click **Load unpacked** and pick the `extension/sus-or-bus` folder
-3. Click a link to another site — the corner popup should appear
-
-## Tech stack
-
-- React 18, Vite, Tailwind CSS, shadcn/ui, lucide-react
-- Serverless backend functions (`base44/functions/`) for analysis, accounts, and list sync
-- LLM-powered analysis with structured, dual-audience output
-- 16 languages, light/dark theme, mobile-first design
-
-## Project structure
-
-```
-src/
-  pages/           app screens (Home, Report, Settings, Account, FAQ, legal pages)
-  components/
-    susbus/        feature components (verdict display, score gauge, banners...)
-    ui/            shadcn/ui primitives
-  lib/             i18n, theming, utilities
-base44/
-  entities/        data schemas (Report, ExtensionAccount)
-  functions/       backend: analyzeContent, findAlternatives, account auth + sync
-extension/
-  sus-or-bus/          Chrome extension (Manifest V3)
-  sus-or-bus-safari/   Safari variant
-```
-
-## What's next
-
-- publish the Chrome extension to the Web Store
-- email-header checks (SPF/DKIM) for the email analyzer
-- community verdicts — let users flag wrong ratings and feed corrections back in
+Account sync is its own little system: the website and the extension each hold the user's whitelist/blacklist, and the `accountLists` function merges the two sides without losing changes from either one.
 
 ## License
 Custom Sourced for all (See (`license`)
