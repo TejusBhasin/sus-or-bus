@@ -259,11 +259,21 @@ async function writeCache(cache) {
 }
 
 async function scanOrigin(origin) {
-  const resp = await fetch(ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ inputType: 'url', content: origin })
-  });
+  // A hung request would poison the in-flight cache for this origin and
+  // leave every later check of that site spinning — give up after 45s.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 45000);
+  let resp;
+  try {
+    resp = await fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ inputType: 'url', content: origin }),
+      signal: ctrl.signal
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   const data = await resp.json();
   if (!resp.ok || !data || data.error) throw new Error((data && data.error) || 'Scan failed');
   return {
@@ -335,20 +345,21 @@ async function handleCheck(url, sender) {
     return { status: 'hit', data: hit };
   }
 
-  getScan(origin).then(
-    async (entry) => {
-      const c = await readCache();
-      c[key] = entry;
-      await writeCache(c);
-      bumpStats(entry.verdict);
-      maybeNotify(entry);
-      updateBadge(sender.tab && sender.tab.id, url);
-      notify(sender, { type: 'sb:update', url, status: 'hit', data: entry });
-    },
-    (err) => notify(sender, { type: 'sb:update', url, status: 'error', message: err.message })
-  );
-
-  return { status: 'scanning' };
+  // Answer the click directly: await the scan so the popup always gets a
+  // final result (or an error) instead of waiting on a push message that may
+  // never arrive after a service-worker restart.
+  try {
+    const entry = await getScan(origin);
+    const c = await readCache();
+    c[key] = entry;
+    await writeCache(c);
+    bumpStats(entry.verdict);
+    maybeNotify(entry);
+    updateBadge(sender.tab && sender.tab.id, url);
+    return { status: 'hit', data: entry };
+  } catch (err) {
+    return { status: 'error', message: err.message };
+  }
 }
 
 // Called by the content script whenever a page loads directly (typed,

@@ -353,6 +353,11 @@
       </div>
     `);
     startFacts();
+    // If no answer ever arrives, stop waiting after 60s and show an error
+    // with a Continue option instead of spinning forever.
+    setTimeout(() => {
+      if (url === pendingUrl && shadow && shadow.querySelector('.sb-scan')) renderError(url);
+    }, 60000);
     chrome.runtime
       .sendMessage({ type: 'sb:check', url })
       .then((res) => {
@@ -360,7 +365,6 @@
         if (res && res.status === 'hit') renderResult(url, res.data);
         else if (res && res.status === 'error') renderError(url, res.message);
         else if (res && res.status === 'pass') proceed(); // whitelisted — go without asking
-        // 'scanning' -> waiting for sb:update
       })
       .catch(() => {
         if (url === pendingUrl) renderError(url);
@@ -700,33 +704,54 @@
 
   /* ---------- Link click interception ---------- */
 
+  // Shared link interception: decide whether a click on a link to another
+  // site must be held on this page and checked first. newTab marks opens that
+  // would land in a new tab (Ctrl/Cmd/Shift-click or middle-click).
+  function interceptLink(e, newTab) {
+    if (e.defaultPrevented) return;
+    if (host && e.composedPath().includes(host)) return; // clicks inside our popup
+    const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    let url;
+    try {
+      url = new URL(a.getAttribute('href'), location.href);
+    } catch {
+      return;
+    }
+    if (!/^https?:$/.test(url.protocol)) return;
+    if (url.origin === HERE) return; // same-site links pass through
+    if (isGoogleSearch(url.href)) return; // Google Search pages are never checked
+    const mode = newTab || a.target === '_blank' ? 'blank' : 'same';
+    if (blacklist.has(url.origin)) {
+      e.preventDefault();
+      e.stopPropagation();
+      showBlacklisted(url.href, mode);
+      return;
+    }
+    if (whitelist.has(url.origin)) return; // user whitelisted this site — pass through
+    e.preventDefault();
+    e.stopPropagation();
+    showPopup(url.href, mode);
+  }
+
+  // Plain left clicks stay on this page: the check popup opens here, and the
+  // site only opens after Continue. Ctrl/Cmd/Shift-clicks (new tab) get the
+  // same hold-and-check treatment instead of navigating first.
   window.addEventListener(
     'click',
     (e) => {
-      if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
-      if (host && e.composedPath().includes(host)) return; // clicks inside our popup
-      const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
-      if (!a) return;
-      let url;
-      try {
-        url = new URL(a.getAttribute('href'), location.href);
-      } catch {
-        return;
-      }
-      if (!/^https?:$/.test(url.protocol)) return;
-      if (url.origin === HERE) return; // same-site links pass through
-      if (isGoogleSearch(url.href)) return; // Google Search pages are never checked
-      if (blacklist.has(url.origin)) {
-        e.preventDefault();
-        e.stopPropagation();
-        showBlacklisted(url.href, a.target === '_blank' ? 'blank' : 'same');
-        return;
-      }
-      if (whitelist.has(url.origin)) return; // user whitelisted this site — pass through
-      e.preventDefault();
-      e.stopPropagation();
-      const mode = a.target === '_blank' ? 'blank' : 'same';
-      showPopup(url.href, mode);
+      if (e.button !== 0 || e.altKey) return; // Alt+click downloads — leave it alone
+      interceptLink(e, e.ctrlKey || e.metaKey || e.shiftKey);
+    },
+    true
+  );
+
+  // Middle-click (open in new tab) gets held and checked too.
+  window.addEventListener(
+    'auxclick',
+    (e) => {
+      if (e.button !== 1) return;
+      interceptLink(e, true);
     },
     true
   );
@@ -768,7 +793,15 @@
         takeover = true;
         pendingUrl = location.href;
         if (res.data) renderTakeoverResult(location.href, res.data);
-        else showTakeoverScanning(location.href);
+        else {
+          showTakeoverScanning(location.href);
+          // If the scan result never arrives, stop waiting and let the user proceed.
+          setTimeout(() => {
+            if (takeover && pendingUrl === location.href && shadow && shadow.querySelector('.sb-scan')) {
+              renderTakeoverError();
+            }
+          }, 60000);
+        }
       })
       .catch(() => {});
   })();
