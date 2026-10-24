@@ -1,29 +1,51 @@
-Tejus Bhasin Custom Source-Available License
+CUSTOM SOURCE-AVAILABLE LICENSE
 
-Copyright (c) 2026 Tejus Bhasin
+Copyright (c) 2026 Tejus Bhasin. All rights reserved.
 
-Permission is granted to use, reproduce, modify, and distribute this software and its documentation, subject to the terms below.
+This Custom Source-Available License (the "License") governs the use, reproduction, modification, distribution, and commercial exploitation of the software and associated materials in this repository (collectively, the "Software").
 
-1. Attribution
+1. Limited Permission
 
-Credit is appreciated. Any distribution, public display, or substantial use should retain this copyright notice and identify Tejus Bhasin as the original author where reasonably practicable.
+Subject to the terms of this License, Tejus Bhasin grants each recipient a limited, non-exclusive, non-transferable, revocable license to view, use, reproduce, modify, and distribute the Software for personal, educational, research, and other lawful purposes.
 
-2. Commercial Use and Revenue Share
+2. Attribution
 
-If you use, incorporate, adapt, or distribute this software in a product, service, or other activity that generates monetary gain, you agree to share with Tejus Bhasin at least thirty percent (30%) of the monetary gain remaining after applicable taxes have been paid. The parties may agree in writing to a higher amount or different payment arrangement.
-
-For clarity, any revenue-share payment is due within thirty (30) days after the relevant monetary gain is received, unless Tejus Bhasin agrees otherwise in writing. Upon reasonable request, you will provide enough information to verify the calculation of the amount due, while respecting legitimate confidentiality concerns.
+Credit is appreciated. Any public distribution, substantial modification, public demonstration, or commercial use of the Software should provide clear and reasonable attribution to Tejus Bhasin and identify this repository where practical.
 
 3. Revocation
 
-Tejus Bhasin may revoke this permission at any time by written notice. After receiving a revocation notice, you must follow Tejus Bhasin's written specifications exactly, including any stated deadline and any required cessation, removal, or discontinuation of use. Revocation does not waive obligations that arose before the effective date of the notice.
+Tejus Bhasin may revoke the permissions granted under this License at any time by written notice. Following revocation, the recipient must promptly stop all new use, distribution, licensing, and commercial exploitation of the Software and must follow Tejus Bhasin's written instructions concerning cessation, removal, or transition, to the extent permitted by applicable law. Revocation does not automatically invalidate obligations that accrued before the effective revocation date.
 
-4. No Implied Rights
+4. Commercial and Monetary Benefit
 
-Except for the permission expressly granted above, no license or other right is granted, whether by implication, estoppel, or otherwise. This license does not transfer ownership of the software or any related intellectual-property rights.
+If the Software, or a derivative work that incorporates a material portion of the Software, produces monetary gain, the person or entity receiving that gain shall share with Tejus Bhasin a minimum of thirty percent (30%) of the Net Monetary Gain attributable to the Software.
 
-5. Disclaimer
+For this License, "Net Monetary Gain" means monetary revenue actually received from the relevant use, after deduction only of mandatory taxes directly imposed on and actually paid from that revenue. Ordinary operating costs, salaries, marketing costs, platform fees, financing costs, and other expenses may not be deducted unless Tejus Bhasin agrees otherwise in writing.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL TEJUS BHASIN OR THE COPYRIGHT HOLDER(S) BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR ITS USE.
+Commercial users must keep reasonably complete records of revenue and taxes related to the Software and, upon reasonable written request, provide a good-faith accounting sufficient to verify amounts owed. Amounts due must be reported and paid within thirty (30) days after the end of each calendar quarter in which monetary gain is received, unless the parties agree otherwise in writing.
 
-By using, copying, modifying, or distributing the software, you acknowledge that you have read and accepted these terms.
+5. Notices and License Text
+
+A copy of this License and the copyright notice must accompany all permitted copies or substantial portions of the Software. Any modified version must clearly identify that modifications were made and must retain this License.
+
+6. No Sublicensing or Transfer of Rights
+
+No recipient may sublicense, assign, or transfer the permissions granted by this License except with Tejus Bhasin's prior written consent. Distribution of the Software remains subject to this License.
+
+7. Third-Party Materials
+
+This License applies only to material authored or controlled by Tejus Bhasin. Third-party components remain subject to their own applicable licenses, notices, and obligations.
+
+8. No Warranty; Limitation of Liability
+
+THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY LAW, TEJUS BHASIN SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS, REVENUE, DATA, OR BUSINESS INTERRUPTION, ARISING FROM OR RELATED TO THE SOFTWARE OR THIS LICENSE.
+
+9. Governing Law and Severability
+
+This License is to be interpreted under the laws applicable to the parties and the relevant transaction. If any provision is held invalid or unenforceable, it shall be limited or severed to the minimum extent necessary, and the remaining provisions shall remain in effect.
+
+10. Acceptance
+
+By using, reproducing, modifying, distributing, or commercially exploiting the Software, the recipient acknowledges that they have read, understood, and agreed to this License.
+
+This document is a general license draft and is not legal advice. Tejus Bhasin should obtain review by a qualified attorney before relying on it for commercial licensing or enforcement.
