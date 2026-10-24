@@ -26,7 +26,7 @@ export default function OurStory() {
       >
         <Github className="w-4 h-4" />
         <span style={{ color: 'blue', textDecoration: 'underline' }}>
-  read the code on GitHub
+  This project is open sourced - read the code on GitHub
 </span>
 
       </a>
