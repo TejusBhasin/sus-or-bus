@@ -25,7 +25,10 @@ export default function OurStory() {
         className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-foreground/80 transition-colors"
       >
         <Github className="w-4 h-4" />
-        Sus or Bus is open source — read the code on GitHub
+        <span style={{ color: 'blue', textDecoration: 'underline' }}>
+  read the code on GitHub
+</span>
+
       </a>
     </section>
   );
