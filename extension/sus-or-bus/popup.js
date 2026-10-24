@@ -378,8 +378,14 @@ $('acct-recover-go').addEventListener('click', async () => {
     $('acct-recover-go').disabled = false;
   }
 });
-$('acct-web-login').addEventListener('click', () => {
-  chrome.tabs.create({ url: SITE_URL + 'login' });
+$('acct-google').addEventListener('click', () => {
+  chrome.tabs.create({ url: SITE_URL + 'account?provider=google' });
+});
+$('acct-microsoft').addEventListener('click', () => {
+  chrome.tabs.create({ url: SITE_URL + 'account?provider=microsoft' });
+});
+$('acct-apple').addEventListener('click', () => {
+  chrome.tabs.create({ url: SITE_URL + 'account?provider=apple' });
 });
 
 $('acct-logout').addEventListener('click', () => {

@@ -9,6 +9,10 @@ import { registerAccount } from '@/functions/registerAccount';
 import { loginAccount } from '@/functions/loginAccount';
 import { accountLists } from '@/functions/accountLists';
 import { recoveryCode as recoveryCodeFn } from '@/functions/recoveryCode';
+import { platformSignIn } from '@/functions/platformSignIn';
+import { base44 } from '@/api/base44Client';
+import GoogleIcon from '@/components/GoogleIcon';
+import { MicrosoftIcon, AppleIcon } from '@/components/ProviderIcons';
 import AccountListEditor from '@/components/susbus/AccountListEditor';
 import SetPasswordPrompt from '@/components/susbus/SetPasswordPrompt';
 import RecoveryCodeNotice from '@/components/susbus/RecoveryCodeNotice';
@@ -47,11 +51,20 @@ export default function Account() {
   const [saving, setSaving] = useState(false);
   const [recoveryCodeValue, setRecoveryCodeValue] = useState('');
   const [code, setCode] = useState('');
+  const [providerBusy, setProviderBusy] = useState(false);
 
   const signOut = () => {
+    const wasProvider = session?.via === 'provider';
     localStorage.removeItem(STORAGE_KEY);
     setSession(null);
     setLists({ whitelist: [], blacklist: [] });
+    // Provider sessions outlive this page — end them too, or the account
+    // would silently sign itself back in on the next visit.
+    if (wasProvider) base44.auth.logout(window.location.pathname).catch(() => {});
+  };
+
+  const handleProvider = (provider) => {
+    base44.auth.loginWithProvider(provider, '/account');
   };
 
   useEffect(() => {
@@ -66,6 +79,47 @@ export default function Account() {
       })
       .catch(() => {});
   }, [session]); // eslint-disable-line
+
+  // Provider sign-in (Google / Microsoft / Apple): a ?provider= link from the
+  // extension starts the OAuth flow; landing back here links the platform
+  // session to the account system (creating the account if it's new).
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const provider = urlParams.get('provider');
+    if (provider) window.history.replaceState({}, '', window.location.pathname);
+    const saved = getSavedAccount();
+    if (['google', 'microsoft', 'apple'].includes(provider) && !saved) {
+      base44.auth.loginWithProvider(provider, '/account');
+      return;
+    }
+    if (saved) return;
+    let cancelled = false;
+    base44.auth
+      .isAuthenticated()
+      .then((authed) => (authed ? base44.auth.me() : null))
+      .then(async (user) => {
+        if (cancelled || !user?.email) return;
+        setProviderBusy(true);
+        try {
+          const res = await platformSignIn();
+          const d = res.data || {};
+          if (!d.error && d.token) {
+            const linked = { token: d.token, email: d.email, mustSetPassword: !!d.mustSetPassword, via: 'provider' };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(linked));
+            setLists({ whitelist: d.whitelist || [], blacklist: d.blacklist || [] });
+            setSession(linked);
+            setRecoveryCodeValue(d.recoveryCode || '');
+          }
+        } catch {
+          // linking failed — the email/password form stays available
+        }
+        if (!cancelled) setProviderBusy(false);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []); // eslint-disable-line
 
   const handleAuth = async () => {
     if (loading) return;
@@ -278,6 +332,48 @@ export default function Account() {
                   </>
                 )}
               </Button>
+
+              <div className="flex items-center gap-3 pt-2">
+                <div className="h-px flex-1 bg-border" />
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">or continue with</span>
+                <div className="h-px flex-1 bg-border" />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleProvider('google')}
+                  disabled={providerBusy}
+                  aria-label="Continue with Google"
+                  className="h-11 bg-background/60 border-border text-foreground hover:bg-secondary"
+                >
+                  {providerBusy ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : <GoogleIcon className="w-5 h-5 mx-auto" />}
+                  <span className="text-xs">Google</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleProvider('microsoft')}
+                  disabled={providerBusy}
+                  aria-label="Continue with Microsoft"
+                  className="h-11 bg-background/60 border-border text-foreground hover:bg-secondary"
+                >
+                  {providerBusy ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : <MicrosoftIcon className="w-5 h-5 mx-auto" />}
+                  <span className="text-xs">Microsoft</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleProvider('apple')}
+                  disabled={providerBusy}
+                  aria-label="Continue with Apple"
+                  className="h-11 bg-background/60 border-border text-foreground hover:bg-secondary"
+                >
+                  {providerBusy ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : <AppleIcon className="w-5 h-5 mx-auto" />}
+                  <span className="text-xs">Apple</span>
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                A secure provider window opens. New accounts then choose a password here, so the browser extension can
+                sign in with it too.
+              </p>
             </div>
           </>
         ) : (
