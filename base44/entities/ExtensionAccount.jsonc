@@ -67,6 +67,11 @@
         "type": "string"
       },
       "description": "Emails of connected provider identities, kept flat for sign-in lookup"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional note about this account, up to 1000 characters"
     }
   },
   "required": [

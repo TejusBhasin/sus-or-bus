@@ -25,6 +25,11 @@
       "type": "number",
       "default": 0,
       "description": "Failed redeem attempts; the code is burned after 5"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional note about this recovery code, up to 1000 characters"
     }
   },
   "required": [

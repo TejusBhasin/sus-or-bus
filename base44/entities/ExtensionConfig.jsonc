@@ -22,6 +22,11 @@
     "announcement": {
       "type": "string",
       "description": "Short note shown at the top of the extension popup until the user dismisses it"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional note about this configuration, up to 1000 characters"
     }
   },
   "required": [],

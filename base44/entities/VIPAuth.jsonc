@@ -5,6 +5,11 @@
     "url": {
       "type": "string",
       "description": "Website origin (e.g. https://example.com) that always returns a verified BUS verdict at 95+"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional note about this verified site, up to 1000 characters"
     }
   },
   "required": [
