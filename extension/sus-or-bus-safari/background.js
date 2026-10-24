@@ -10,6 +10,7 @@ const ENDPOINT = APP_ORIGIN + '/functions/analyzeContent';
 const ALT_ENDPOINT = APP_ORIGIN + '/functions/findAlternatives';
 const REGISTER_ENDPOINT = APP_ORIGIN + '/functions/registerAccount';
 const LOGIN_ENDPOINT = APP_ORIGIN + '/functions/loginAccount';
+const SETPASS_ENDPOINT = APP_ORIGIN + '/functions/setAccountPassword';
 const LISTS_ENDPOINT = APP_ORIGIN + '/functions/accountLists';
 const FRESH_MS = 7 * 24 * 60 * 60 * 1000; // re-scan a site after 7 days
 const MAX_ENTRIES = 500;
@@ -403,6 +404,29 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ status: 'ok' });
     return;
   }
+  if (msg.type === 'sb:setPassword') {
+    chrome.storage.local.get(['sb_token']).then(({ sb_token }) => {
+      if (!sb_token) {
+        sendResponse({ error: 'Not signed in' });
+        return;
+      }
+      fetch(SETPASS_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: sb_token, newPassword: msg.newPassword })
+      })
+        .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => null) }))
+        .then(({ ok, data }) => {
+          if (!ok || !data || data.error) {
+            sendResponse({ error: (data && data.error) || 'Something went wrong' });
+            return;
+          }
+          sendResponse({ ok: true });
+        })
+        .catch(() => sendResponse({ error: 'Could not reach Sus or Bus right now' }));
+    });
+    return true; // async response
+  }
   if (msg.type === 'sb:register' || msg.type === 'sb:login') {
     fetch(msg.type === 'sb:register' ? REGISTER_ENDPOINT : LOGIN_ENDPOINT, {
       method: 'POST',
@@ -423,7 +447,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         (store.sb_blacklist || []).forEach((o) => bl.add(o));
         await chrome.storage.local.set({ sb_whitelist: [...wl], sb_blacklist: [...bl] });
         syncAccountLists();
-        sendResponse({ ok: true, token: data.token, email: data.email });
+        sendResponse({ ok: true, token: data.token, email: data.email, mustSetPassword: !!data.mustSetPassword });
       })
       .catch(() => sendResponse({ error: 'Could not reach Sus or Bus right now' }));
     return true; // async response

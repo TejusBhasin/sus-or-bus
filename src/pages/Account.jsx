@@ -9,6 +9,7 @@ import { registerAccount } from '@/functions/registerAccount';
 import { loginAccount } from '@/functions/loginAccount';
 import { accountLists } from '@/functions/accountLists';
 import AccountListEditor from '@/components/susbus/AccountListEditor';
+import SetPasswordPrompt from '@/components/susbus/SetPasswordPrompt';
 
 const STORAGE_KEY = 'sb_account';
 
@@ -78,7 +79,7 @@ export default function Account() {
       if (res.data?.error) {
         setError(res.data.error);
       } else if (res.data?.token) {
-        const saved = { token: res.data.token, email: res.data.email };
+        const saved = { token: res.data.token, email: res.data.email, mustSetPassword: !!res.data.mustSetPassword };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
         setLists({ whitelist: res.data.whitelist || [], blacklist: res.data.blacklist || [] });
         setSession(saved);
@@ -186,6 +187,12 @@ export default function Account() {
                   className="mt-1 bg-background/60 border-border font-mono text-sm"
                 />
               </div>
+              {mode === 'signin' && (
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  No password handy? Paste your account key (salt-hash) in the password field
+                  instead — you will set a new password after signing in.
+                </p>
+              )}
               {mode === 'create' && (
                 <div>
                   <label className="text-xs font-mono text-muted-foreground">Confirm password</label>
@@ -243,6 +250,17 @@ export default function Account() {
             >
               Open your threat-landscape dashboard →
             </Link>
+
+            {session.mustSetPassword && (
+              <SetPasswordPrompt
+                token={session.token}
+                onDone={() => {
+                  const saved = { ...session, mustSetPassword: false };
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+                  setSession(saved);
+                }}
+              />
+            )}
 
             <div className="mt-6 space-y-4">
               <AccountListEditor

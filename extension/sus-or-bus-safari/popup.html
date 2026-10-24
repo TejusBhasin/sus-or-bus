@@ -82,6 +82,15 @@
         <button id="acct-logout" class="btn">Log out</button>
       </div>
     </div>
+    <div id="acct-reset" hidden>
+      <p class="muted">You signed in with your account key. Set a new password now.</p>
+      <input type="password" id="acct-new-pass" class="input" placeholder="New password (8+ characters)" autocomplete="new-password">
+      <input type="password" id="acct-new-pass2" class="input" placeholder="Confirm new password" autocomplete="new-password">
+      <p class="err" id="acct-reset-err" hidden></p>
+      <div class="row">
+        <button id="acct-setpass" class="btn">Set new password</button>
+      </div>
+    </div>
     <div id="acct-form">
       <input type="email" id="acct-email-in" class="input" placeholder="Email" autocomplete="email">
       <input type="password" id="acct-pass" class="input" placeholder="Password (8+ characters)" autocomplete="new-password">

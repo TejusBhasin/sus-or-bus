@@ -232,6 +232,7 @@ $('import-file').addEventListener('change', async (e) => {
 function renderAccount(signedIn, email) {
   $('acct-signedin').hidden = !signedIn;
   $('acct-form').hidden = signedIn;
+  $('acct-reset').hidden = true;
   if (signedIn) $('acct-email').textContent = 'Signed in as ' + email;
   $('acct-err').hidden = true;
 }
@@ -265,7 +266,13 @@ async function submitAccount(mode) {
       return;
     }
     $('acct-pass').value = '';
-    renderAccount(true, res.email || email);
+    if (res.mustSetPassword) {
+      $('acct-signedin').hidden = true;
+      $('acct-form').hidden = true;
+      $('acct-reset').hidden = false;
+    } else {
+      renderAccount(true, res.email || email);
+    }
   } catch {
     err.textContent = 'Could not reach Sus or Bus right now.';
     err.hidden = false;
@@ -276,6 +283,40 @@ async function submitAccount(mode) {
 
 $('acct-login').addEventListener('click', () => submitAccount('login'));
 $('acct-register').addEventListener('click', () => submitAccount('register'));
+$('acct-setpass').addEventListener('click', async () => {
+  const p1 = $('acct-new-pass').value;
+  const p2 = $('acct-new-pass2').value;
+  const err = $('acct-reset-err');
+  err.hidden = true;
+  if (!p1 || p1.length < 8) {
+    err.textContent = 'New password must be at least 8 characters.';
+    err.hidden = false;
+    return;
+  }
+  if (p1 !== p2) {
+    err.textContent = 'Passwords do not match.';
+    err.hidden = false;
+    return;
+  }
+  $('acct-setpass').disabled = true;
+  try {
+    const res = await chrome.runtime.sendMessage({ type: 'sb:setPassword', newPassword: p1 });
+    if (!res || res.error) {
+      err.textContent = (res && res.error) || 'Something went wrong.';
+      err.hidden = false;
+    } else {
+      $('acct-new-pass').value = '';
+      $('acct-new-pass2').value = '';
+      const saved = await chrome.storage.local.get(['sb_email']);
+      renderAccount(true, saved.sb_email || '');
+    }
+  } catch {
+    err.textContent = 'Could not reach Sus or Bus right now.';
+    err.hidden = false;
+  } finally {
+    $('acct-setpass').disabled = false;
+  }
+});
 $('acct-logout').addEventListener('click', () => {
   chrome.storage.local
     .remove(['sb_token', 'sb_email'])
