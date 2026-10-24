@@ -189,8 +189,8 @@ export default function Account() {
               </div>
               {mode === 'signin' && (
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  No password handy? Paste your account key (salt-hash) in the password field
-                  instead — you will set a new password after signing in.
+                  Forgot your password? Contact support at Tejusbhasin17@gmail.com
+                  instead — you will set a new password after signing in with a temporary password.
                 </p>
               )}
               {mode === 'create' && (
