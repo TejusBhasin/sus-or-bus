@@ -14,7 +14,7 @@ export default function OurStory() {
         I&apos;m Tejus Bhasin, and I built Sus or Bus after my school was hacked over the summer. A teacher clicked a
         malicious link, which gave a bad actor access to that teacher&apos;s inbox and email. From the teacher&apos;s
         account, the hacker emailed every student in the school, offering about $3,000 worth of gear — including an
-        iPad Pro and a camera — for just $100 because of some incident. Students lost real money. Sus or Bus exists to
+        iPad Pro and a camera — for just $100 because of some "incident". Students lost real money. Sus or Bus exists to
         stop scams like this before they start, by checking the links you click, the emails you receive, and the sites
         you browse.
       </p>
