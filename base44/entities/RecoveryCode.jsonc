@@ -1,0 +1,58 @@
+{
+  "name": "RecoveryCode",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "Email of the account this single-use recovery code unlocks"
+    },
+    "code_salt": {
+      "type": "string"
+    },
+    "code_hash": {
+      "type": "string",
+      "description": "Salted hash of the recovery code. The code itself is never stored."
+    },
+    "expires": {
+      "type": "string",
+      "description": "ISO date after which the code can no longer be used"
+    },
+    "used": {
+      "type": "boolean",
+      "default": false
+    },
+    "attempts": {
+      "type": "number",
+      "default": 0,
+      "description": "Failed redeem attempts; the code is burned after 5"
+    }
+  },
+  "required": [
+    "email",
+    "code_salt",
+    "code_hash",
+    "expires"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

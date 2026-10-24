@@ -6,6 +6,8 @@ Sus or Bus checks links, emails, code, documents, and plain text for scams, phis
 
 Try it live at **https://susorbus.com**
 
+Sus or Bus is open source — the full code lives at **https://github.com/TejusBhasin/sus-or-bus** (MIT). No keys, credentials, or secrets are committed to this repository; everything sensitive is managed on the hosting platform.
+
 <img width="1470" height="800" alt="Screenshot 2026-09-28 at 9 05 27 PM" src="https://github.com/user-attachments/assets/4303d81a-777e-428b-b018-8ff14b9d8316" />
 
 

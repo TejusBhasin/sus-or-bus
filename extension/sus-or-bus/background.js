@@ -11,6 +11,7 @@ const ALT_ENDPOINT = APP_ORIGIN + '/functions/findAlternatives';
 const REGISTER_ENDPOINT = APP_ORIGIN + '/functions/registerAccount';
 const LOGIN_ENDPOINT = APP_ORIGIN + '/functions/loginAccount';
 const SETPASS_ENDPOINT = APP_ORIGIN + '/functions/setAccountPassword';
+const RECOVERY_ENDPOINT = APP_ORIGIN + '/functions/recoveryCode';
 const LISTS_ENDPOINT = APP_ORIGIN + '/functions/accountLists';
 const FRESH_MS = 7 * 24 * 60 * 60 * 1000; // re-scan a site after 7 days
 const MAX_ENTRIES = 500;
@@ -134,6 +135,20 @@ async function syncAccountLists() {
       blacklist: store.sb_blacklist || []
     })
   }).catch(() => {});
+}
+
+// Shared post-auth storage for register / login / recover: save the session,
+// merge the account's lists into this device, and push the merged result back
+// so both sides match.
+async function applyAccountData(data) {
+  await chrome.storage.local.set({ sb_token: data.token, sb_email: data.email, sb_asked: true });
+  const wl = new Set(data.whitelist || []);
+  const bl = new Set(data.blacklist || []);
+  const store = await chrome.storage.local.get(['sb_whitelist', 'sb_blacklist']);
+  (store.sb_whitelist || []).forEach((o) => wl.add(o));
+  (store.sb_blacklist || []).forEach((o) => bl.add(o));
+  await chrome.storage.local.set({ sb_whitelist: [...wl], sb_blacklist: [...bl] });
+  syncAccountLists();
 }
 
 // On startup: pull the account's lists and merge them into this device, then
@@ -427,6 +442,31 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     });
     return true; // async response
   }
+  if (msg.type === 'sb:recover') {
+    // Redeem a recovery code: verify it server-side, set a new password, and
+    // sign in. The code is never stored on the device.
+    fetch(RECOVERY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'redeem',
+        email: msg.email,
+        code: msg.code,
+        newPassword: msg.newPassword
+      })
+    })
+      .then(async (r) => ({ ok: r.ok, data: await r.json().catch(() => null) }))
+      .then(async ({ ok, data }) => {
+        if (!ok || !data || data.error) {
+          sendResponse({ error: (data && data.error) || 'Something went wrong' });
+          return;
+        }
+        await applyAccountData(data);
+        sendResponse({ ok: true, token: data.token, email: data.email });
+      })
+      .catch(() => sendResponse({ error: 'Could not reach Sus or Bus right now' }));
+    return true; // async response
+  }
   if (msg.type === 'sb:register' || msg.type === 'sb:login') {
     fetch(msg.type === 'sb:register' ? REGISTER_ENDPOINT : LOGIN_ENDPOINT, {
       method: 'POST',
@@ -439,15 +479,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           sendResponse({ error: (data && data.error) || 'Something went wrong' });
           return;
         }
-        await chrome.storage.local.set({ sb_token: data.token, sb_email: data.email, sb_asked: true });
-        const wl = new Set(data.whitelist || []);
-        const bl = new Set(data.blacklist || []);
-        const store = await chrome.storage.local.get(['sb_whitelist', 'sb_blacklist']);
-        (store.sb_whitelist || []).forEach((o) => wl.add(o));
-        (store.sb_blacklist || []).forEach((o) => bl.add(o));
-        await chrome.storage.local.set({ sb_whitelist: [...wl], sb_blacklist: [...bl] });
-        syncAccountLists();
-        sendResponse({ ok: true, token: data.token, email: data.email, mustSetPassword: !!data.mustSetPassword });
+        await applyAccountData(data);
+        sendResponse({
+          ok: true,
+          token: data.token,
+          email: data.email,
+          mustSetPassword: !!data.mustSetPassword,
+          recoveryCode: data.recoveryCode || null
+        });
       })
       .catch(() => sendResponse({ error: 'Could not reach Sus or Bus right now' }));
     return true; // async response

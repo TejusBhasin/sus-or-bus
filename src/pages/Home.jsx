@@ -12,6 +12,7 @@ import PullToRefresh from '@/components/susbus/PullToRefresh';
 import DocumentUpload from '@/components/susbus/DocumentUpload';
 import Footer from '@/components/susbus/Footer';
 import HomeSections from '@/components/susbus/HomeSections';
+import OurStory from '@/components/susbus/OurStory';
 import ScrollDownButton from '@/components/susbus/ScrollDownButton';
 import { useLanguage } from '@/lib/i18n';
 
@@ -202,6 +203,8 @@ export default function Home() {
           </Button>
           <p className="mt-2 text-center text-xs text-muted-foreground font-mono">{t('shortcut')}</p>
         </div>
+
+        <OurStory />
       </div>
 
       </PullToRefresh>

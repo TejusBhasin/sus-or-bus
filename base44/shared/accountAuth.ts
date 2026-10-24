@@ -43,3 +43,18 @@ export function sanitizeList(value, fallback) {
   }
   return out;
 }
+
+// Recovery codes: high-entropy, single-use, shown to the user exactly once.
+// Only the salt and hash are ever stored — never the code itself.
+const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+
+export function makeRecoveryCode() {
+  const groups = [];
+  for (let g = 0; g < 4; g++) {
+    const bytes = crypto.getRandomValues(new Uint8Array(5));
+    let s = '';
+    for (let i = 0; i < 5; i++) s += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+    groups.push(s);
+  }
+  return groups.join('-');
+}

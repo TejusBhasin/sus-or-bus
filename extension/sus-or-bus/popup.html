@@ -91,6 +91,25 @@
         <button id="acct-setpass" class="btn">Set new password</button>
       </div>
     </div>
+    <div id="acct-code" hidden>
+      <p class="muted">Save your recovery code — it signs you back in if you ever lose your password. It is shown only this once.</p>
+      <p class="muted"><strong id="acct-code-value"></strong></p>
+      <div class="row">
+        <button id="acct-code-dismiss" class="btn subtle">I've saved it</button>
+      </div>
+    </div>
+    <div id="acct-recover" hidden>
+      <p class="muted">Use the recovery code you saved (or one support gave you) to set a new password and sign in.</p>
+      <input type="email" id="acct-recover-email" class="input" placeholder="Email" autocomplete="email">
+      <input type="text" id="acct-recover-code" class="input" placeholder="Recovery code" autocomplete="one-time-code">
+      <input type="password" id="acct-recover-pass" class="input" placeholder="New password (8+ characters)" autocomplete="new-password">
+      <input type="password" id="acct-recover-pass2" class="input" placeholder="Confirm new password" autocomplete="new-password">
+      <p class="err" id="acct-recover-err" hidden></p>
+      <div class="row">
+        <button id="acct-recover-go" class="btn go">Recover account</button>
+        <button id="acct-recover-back" class="btn subtle">Back</button>
+      </div>
+    </div>
     <div id="acct-form">
       <input type="email" id="acct-email-in" class="input" placeholder="Email" autocomplete="email">
       <input type="password" id="acct-pass" class="input" placeholder="Password (8+ characters)" autocomplete="new-password">
@@ -98,6 +117,13 @@
       <div class="row">
         <button id="acct-login" class="btn">Sign in</button>
         <button id="acct-register" class="btn">Create account</button>
+      </div>
+      <div class="row">
+        <button id="acct-recover-link" class="btn subtle">Use a recovery code</button>
+      </div>
+      <p class="muted small">Prefer Google, Apple, or Microsoft? You can sign in on the website with those too.</p>
+      <div class="row">
+        <button id="acct-web-login" class="btn subtle">Open website sign-in</button>
       </div>
     </div>
   </section>

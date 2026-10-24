@@ -4,12 +4,14 @@ import TopNav from '@/components/susbus/TopNav';
 import Footer from '@/components/susbus/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, UserPlus, LogIn, LogOut, Mail, ShieldCheck } from 'lucide-react';
+import { Loader2, UserPlus, LogIn, LogOut, Mail, ShieldCheck, KeyRound } from 'lucide-react';
 import { registerAccount } from '@/functions/registerAccount';
 import { loginAccount } from '@/functions/loginAccount';
 import { accountLists } from '@/functions/accountLists';
+import { recoveryCode as recoveryCodeFn } from '@/functions/recoveryCode';
 import AccountListEditor from '@/components/susbus/AccountListEditor';
 import SetPasswordPrompt from '@/components/susbus/SetPasswordPrompt';
+import RecoveryCodeNotice from '@/components/susbus/RecoveryCodeNotice';
 
 const STORAGE_KEY = 'sb_account';
 
@@ -43,6 +45,8 @@ export default function Account() {
   const [error, setError] = useState('');
   const [lists, setLists] = useState({ whitelist: [], blacklist: [] });
   const [saving, setSaving] = useState(false);
+  const [recoveryCodeValue, setRecoveryCodeValue] = useState('');
+  const [code, setCode] = useState('');
 
   const signOut = () => {
     localStorage.removeItem(STORAGE_KEY);
@@ -66,6 +70,33 @@ export default function Account() {
   const handleAuth = async () => {
     if (loading) return;
     setError('');
+    if (mode === 'recover') {
+      if (password.length < 8) {
+        setError('New password must be at least 8 characters.');
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await recoveryCodeFn({ action: 'redeem', email, code, newPassword: password, source: 'web' });
+        if (res.data?.error) {
+          setError(res.data.error);
+        } else if (res.data?.token) {
+          const saved = { token: res.data.token, email: res.data.email, mustSetPassword: false };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+          setLists({ whitelist: res.data.whitelist || [], blacklist: res.data.blacklist || [] });
+          setSession(saved);
+          setEmail('');
+          setPassword('');
+          setCode('');
+        } else {
+          setError('Something went wrong — please try again.');
+        }
+      } catch (e) {
+        setError(e?.response?.data?.error || 'Something went wrong — please try again.');
+      }
+      setLoading(false);
+      return;
+    }
     if (mode === 'create' && password !== confirm) {
       setError('Passwords do not match.');
       return;
@@ -83,6 +114,7 @@ export default function Account() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
         setLists({ whitelist: res.data.whitelist || [], blacklist: res.data.blacklist || [] });
         setSession(saved);
+        setRecoveryCodeValue(res.data.recoveryCode || '');
         setEmail('');
         setPassword('');
         setConfirm('');
@@ -148,7 +180,8 @@ export default function Account() {
               <div className="flex gap-1 p-1 bg-background/60 rounded-lg border border-border w-fit">
                 {[
                   { id: 'create', label: 'Create account', icon: UserPlus },
-                  { id: 'signin', label: 'Sign in', icon: LogIn }
+                  { id: 'signin', label: 'Sign in', icon: LogIn },
+                  { id: 'recover', label: 'Recovery', icon: KeyRound }
                 ].map((tb) => {
                   const Icon = tb.icon;
                   return (
@@ -177,7 +210,7 @@ export default function Account() {
                 />
               </div>
               <div>
-                <label className="text-xs font-mono text-muted-foreground">Password</label>
+                <label className="text-xs font-mono text-muted-foreground">{mode === 'recover' ? 'New password' : 'Password'}</label>
                 <Input
                   type="password"
                   value={password}
@@ -189,9 +222,29 @@ export default function Account() {
               </div>
               {mode === 'signin' && (
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Forgot your password? Contact support at Tejusbhasin17@gmail.com
-                  instead — you will set a new password after signing in with a temporary password.
+                  Forgot your password? Use the <span className="font-semibold text-foreground">Recovery</span> tab
+                  with your recovery code — it signs you back in and lets you set a new password. Lost the code too?
+                  Contact support for a new one.
                 </p>
+              )}
+              {mode === 'recover' && (
+                <>
+                  <div>
+                    <label className="text-xs font-mono text-muted-foreground">Recovery code</label>
+                    <Input
+                      type="text"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAuth()}
+                      placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+                      className="mt-1 bg-background/60 border-border font-mono text-sm uppercase tracking-wider"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Enter the recovery code you saved when you created your account (or one support gave you), and
+                    choose a new password.
+                  </p>
+                </>
               )}
               {mode === 'create' && (
                 <div>
@@ -208,16 +261,20 @@ export default function Account() {
 
               {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
 
-              <Button onClick={handleAuth} disabled={loading || !email.trim() || !password} className="w-full h-12 font-semibold">
+              <Button
+                onClick={handleAuth}
+                disabled={loading || !email.trim() || !password || (mode === 'recover' && !code.trim())}
+                className="w-full h-12 font-semibold"
+              >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {mode === 'create' ? 'Creating…' : 'Signing in…'}
+                    {mode === 'create' ? 'Creating…' : mode === 'recover' ? 'Recovering…' : 'Signing in…'}
                   </>
                 ) : (
                   <>
-                    {mode === 'create' ? <UserPlus className="w-4 h-4 mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
-                    {mode === 'create' ? 'Create account' : 'Sign in'}
+                    {mode === 'create' ? <UserPlus className="w-4 h-4 mr-2" /> : mode === 'recover' ? <KeyRound className="w-4 h-4 mr-2" /> : <LogIn className="w-4 h-4 mr-2" />}
+                    {mode === 'create' ? 'Create account' : mode === 'recover' ? 'Recover account' : 'Sign in'}
                   </>
                 )}
               </Button>
@@ -260,6 +317,18 @@ export default function Account() {
                   setSession(saved);
                 }}
               />
+            )}
+
+            {recoveryCodeValue && (
+              <div className="mt-6 max-w-md">
+                <RecoveryCodeNotice code={recoveryCodeValue} />
+                <button
+                  onClick={() => setRecoveryCodeValue('')}
+                  className="mt-3 text-xs font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  I've saved it — dismiss
+                </button>
+              </div>
             )}
 
             <div className="mt-6 space-y-4">

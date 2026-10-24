@@ -266,6 +266,10 @@ async function submitAccount(mode) {
       return;
     }
     $('acct-pass').value = '';
+    if (res.recoveryCode) {
+      $('acct-code-value').textContent = res.recoveryCode;
+      $('acct-code').hidden = false;
+    }
     if (res.mustSetPassword) {
       $('acct-signedin').hidden = true;
       $('acct-form').hidden = true;
@@ -317,6 +321,67 @@ $('acct-setpass').addEventListener('click', async () => {
     $('acct-setpass').disabled = false;
   }
 });
+$('acct-code-dismiss').addEventListener('click', () => {
+  $('acct-code').hidden = true;
+});
+
+$('acct-recover-link').addEventListener('click', () => {
+  $('acct-err').hidden = true;
+  $('acct-form').hidden = true;
+  $('acct-recover').hidden = false;
+});
+$('acct-recover-back').addEventListener('click', () => {
+  $('acct-recover').hidden = true;
+  $('acct-form').hidden = false;
+});
+$('acct-recover-go').addEventListener('click', async () => {
+  const email = $('acct-recover-email').value.trim();
+  const code = $('acct-recover-code').value.trim();
+  const p1 = $('acct-recover-pass').value;
+  const p2 = $('acct-recover-pass2').value;
+  const err = $('acct-recover-err');
+  err.hidden = true;
+  if (!email || !code) {
+    err.textContent = 'Enter your email and recovery code.';
+    err.hidden = false;
+    return;
+  }
+  if (p1.length < 8) {
+    err.textContent = 'New password must be at least 8 characters.';
+    err.hidden = false;
+    return;
+  }
+  if (p1 !== p2) {
+    err.textContent = 'Passwords do not match.';
+    err.hidden = false;
+    return;
+  }
+  $('acct-recover-go').disabled = true;
+  try {
+    const res = await chrome.runtime.sendMessage({ type: 'sb:recover', email, code, newPassword: p1 });
+    if (!res || res.error) {
+      err.textContent = (res && res.error) || 'Something went wrong.';
+      err.hidden = false;
+      return;
+    }
+    $('acct-recover-email').value = '';
+    $('acct-recover-code').value = '';
+    $('acct-recover-pass').value = '';
+    $('acct-recover-pass2').value = '';
+    $('acct-recover').hidden = true;
+    $('acct-form').hidden = false;
+    renderAccount(true, res.email || email);
+  } catch {
+    err.textContent = 'Could not reach Sus or Bus right now.';
+    err.hidden = false;
+  } finally {
+    $('acct-recover-go').disabled = false;
+  }
+});
+$('acct-web-login').addEventListener('click', () => {
+  chrome.tabs.create({ url: SITE_URL + 'login' });
+});
+
 $('acct-logout').addEventListener('click', () => {
   chrome.storage.local
     .remove(['sb_token', 'sb_email'])

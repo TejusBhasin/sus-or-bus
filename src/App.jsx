@@ -19,6 +19,10 @@ const Extension = lazy(() => import('@/pages/Extension'));
 const History = lazy(() => import('@/pages/History'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Account = lazy(() => import('@/pages/Account'));
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 import { LanguageProvider } from '@/lib/i18n';
 import { ThemeProvider } from '@/lib/theme';
 
@@ -62,6 +66,11 @@ const AnimatedRoutes = () => {
       </div>
     }>
       <Routes>
+            {/* Auth (platform-managed: email, Google, Microsoft, Apple) */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* Add your page Route elements here */}
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
