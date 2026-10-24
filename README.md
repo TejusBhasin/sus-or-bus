@@ -6,7 +6,7 @@ Sus or Bus checks links, emails, code, documents, and plain text for scams, phis
 
 Try it live at **https://susorbus.com**
 
-Sus or Bus is open source — the full code lives at **https://github.com/TejusBhasin/sus-or-bus** (MIT). No keys, credentials, or secrets are committed to this repository; everything sensitive is managed on the hosting platform.
+Sus or Bus is following the MIT license for the Congressional App Challenge and US Government + affiliates, but custom sourced for everone else. No keys, credentials, or secrets are committed to this repository; everything sensitive is managed on the hosting platform.
 
 <img width="1470" height="800" alt="Screenshot 2026-09-28 at 9 05 27 PM" src="https://github.com/user-attachments/assets/4303d81a-777e-428b-b018-8ff14b9d8316" />
 
@@ -104,5 +104,5 @@ extension/
 - community verdicts — let users flag wrong ratings and feed corrections back in
 
 ## License
-
-[MIT](LICENSE) © 2026 Tejus Bhasin
+Custom Sourced for all (See (`license`)
+[MIT](LICENSE) for the Congressional App Challenge, as well as the US Government + Affiliates © 2026 Tejus Bhasin
