@@ -399,13 +399,13 @@ $('acct-recover-go').addEventListener('click', async () => {
   }
 });
 $('acct-google').addEventListener('click', () => {
-  chrome.tabs.create({ url: SITE_URL + 'account?provider=google' });
+  chrome.tabs.create({ url: SITE_URL + 'account?provider=google&ext=1' });
 });
 $('acct-microsoft').addEventListener('click', () => {
-  chrome.tabs.create({ url: SITE_URL + 'account?provider=microsoft' });
+  chrome.tabs.create({ url: SITE_URL + 'account?provider=microsoft&ext=1' });
 });
 $('acct-apple').addEventListener('click', () => {
-  chrome.tabs.create({ url: SITE_URL + 'account?provider=apple' });
+  chrome.tabs.create({ url: SITE_URL + 'account?provider=apple&ext=1' });
 });
 
 $('acct-logout').addEventListener('click', () => {

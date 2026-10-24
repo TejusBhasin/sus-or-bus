@@ -58,6 +58,7 @@ export default function Account() {
   const [hasPassword, setHasPassword] = useState(true);
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkError, setLinkError] = useState('');
+  const [extSignedIn, setExtSignedIn] = useState(false);
 
   const signOut = () => {
     const wasProvider = session?.via === 'provider';
@@ -98,15 +99,47 @@ export default function Account() {
       .catch(() => {});
   }, [session]); // eslint-disable-line
 
-  // Provider sign-in (Google / Microsoft / Apple): a ?provider= link from the
-  // extension starts the OAuth flow; landing back here links the platform
-  // session to the account system (creating the account if it's new).
+  // Provider sign-in (Google / Microsoft / Apple). A ?provider=x&ext=1 link
+  // from the extension ALWAYS opens the provider's own sign-in page and
+  // returns to /account?extdone=1, where the platform session is linked to
+  // the account system (creating the account if it's new) and handed to the
+  // extension. A plain ?provider= link connects the provider to the account
+  // signed in here.
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const provider = urlParams.get('provider');
-    if (provider) window.history.replaceState({}, '', window.location.pathname);
+    const viaExt = urlParams.get('ext') === '1';
+    const extDone = urlParams.get('extdone') === '1';
+    if (provider || viaExt || extDone) window.history.replaceState({}, '', window.location.pathname);
     const saved = getSavedAccount();
     const isProvider = ['google', 'microsoft', 'apple'].includes(provider);
+    if (isProvider && viaExt) {
+      base44.auth.loginWithProvider(provider, '/account?extdone=1');
+      return;
+    }
+    if (extDone) {
+      setProviderBusy(true);
+      platformSignIn()
+        .then((res) => {
+          const d = res.data || {};
+          if (!d.error && d.token) {
+            const linked = { token: d.token, email: d.email, mustSetPassword: !!d.mustSetPassword, via: 'provider' };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(linked));
+            setLists({ whitelist: d.whitelist || [], blacklist: d.blacklist || [] });
+            setIdentities(d.identities || []);
+            setHasPassword(d.hasPassword !== false);
+            setSession(linked);
+            setRecoveryCodeValue(d.recoveryCode || '');
+            setExtSignedIn(true);
+            // Hand the session to the Sus or Bus content script on this page,
+            // so the browser extension signs in too.
+            window.postMessage({ source: 'sb-site', type: 'sb:account', token: d.token, email: d.email }, window.location.origin);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setProviderBusy(false));
+      return;
+    }
     if (isProvider && !saved) {
       base44.auth.loginWithProvider(provider, '/account');
       return;
@@ -426,6 +459,13 @@ export default function Account() {
                 Sign out
               </Button>
             </div>
+
+            {extSignedIn && (
+              <p className="mt-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+                Signed in — the Sus or Bus browser extension now uses this account too. Reopen the
+                extension popup to see it.
+              </p>
+            )}
 
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed max-w-lg">
               These lists sync to the browser extension: whitelisted sites are never checked, and

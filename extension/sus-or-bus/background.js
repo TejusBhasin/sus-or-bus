@@ -566,6 +566,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ status: 'ok' });
     return;
   }
+  if (msg.type === 'sb:site-account') {
+    // Provider sign-in finished on the site: adopt that session so the popup
+    // shows signed in, and sync the merged lists back to the account.
+    applyAccountData({ token: msg.token, email: msg.email });
+    sendResponse({ status: 'ok' });
+    return;
+  }
   if (msg.type === 'sb:alternatives') {
     handleAlternatives(msg.url)
       .then(sendResponse)

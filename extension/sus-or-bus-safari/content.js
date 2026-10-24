@@ -12,6 +12,18 @@
   const REPORT_BASE = 'https://susorbus.com/report/';
   const HERE = location.origin;
 
+  // Sign-in handoff: after a provider sign-in started from the extension
+  // popup, the site posts the finished session here. Relay it to the
+  // background worker so the extension signs in too.
+  if (HERE === 'https://susorbus.com') {
+    window.addEventListener('message', (e) => {
+      if (e.origin !== HERE || !e.data || e.data.source !== 'sb-site' || e.data.type !== 'sb:account') return;
+      try {
+        chrome.runtime.sendMessage({ type: 'sb:site-account', token: String(e.data.token || ''), email: String(e.data.email || '') });
+      } catch {}
+    });
+  }
+
   let host = null;
   let shadow = null;
   let takeover = false; // full-screen mode (direct open) vs corner popup
