@@ -19,6 +19,7 @@ const Extension = lazy(() => import('@/pages/Extension'));
 const History = lazy(() => import('@/pages/History'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Account = lazy(() => import('@/pages/Account'));
+const Admin = lazy(() => import('@/pages/Admin'));
 const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
 const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
@@ -80,6 +81,7 @@ const AnimatedRoutes = () => {
             <Route path="/history" element={<History />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/" element={<Home />} />
             <Route path="/report/:id" element={<Report />} />
             <Route path="*" element={<PageNotFound />} />

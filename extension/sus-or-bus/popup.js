@@ -61,6 +61,26 @@ function renderPause(until) {
   }
 }
 
+/* ---------- Announcement (live note from the site) ---------- */
+
+function renderAnnouncement(cfg, dismissed) {
+  const el = $('announcement');
+  if (!cfg || !cfg.announcement || cfg.version === dismissed) {
+    el.hidden = true;
+    return;
+  }
+  $('announcement-text').textContent = cfg.announcement;
+  el.hidden = false;
+}
+
+$('announcement-dismiss').addEventListener('click', async () => {
+  const s = await chrome.storage.local.get('sb_config');
+  await chrome.storage.local
+    .set({ sb_announcement_dismissed: (s.sb_config && s.sb_config.version) || '' })
+    .catch(() => {});
+  $('announcement').hidden = true;
+});
+
 /* ---------- Theme (dark by default, light toggle, remembered) ---------- */
 
 function applyTheme(theme) {
@@ -431,9 +451,11 @@ $('pause-cancel').addEventListener('click', async () => {
 async function load() {
   const s = await chrome.storage.local.get([
     'sb_paused_until', 'sb_cache', 'sb_token', 'sb_email',
-    'sb_stats', 'sb_match_mode', 'sb_notify', 'sb_theme'
+    'sb_stats', 'sb_match_mode', 'sb_notify', 'sb_theme',
+    'sb_config', 'sb_announcement_dismissed'
   ]);
   applyTheme(s.sb_theme === 'light' ? 'light' : 'dark');
+  renderAnnouncement(s.sb_config, s.sb_announcement_dismissed);
   renderPause(s.sb_paused_until || 0);
   $('opt-subdomains').checked = s.sb_match_mode === 'domain';
   $('opt-notify').checked = !!s.sb_notify;

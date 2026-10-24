@@ -37,6 +37,36 @@
       "items": {
         "type": "string"
       }
+    },
+    "has_password": {
+      "type": "boolean",
+      "description": "False while the account was created via a provider sign-in and no password has been chosen yet"
+    },
+    "linked_identities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "email"
+        ]
+      },
+      "description": "Provider identities connected to this account (provider + email), so any of them signs into it"
+    },
+    "linked_emails": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Emails of connected provider identities, kept flat for sign-in lookup"
     }
   },
   "required": [

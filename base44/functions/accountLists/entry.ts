@@ -74,7 +74,14 @@ export default async function(req) {
       await base44.asServiceRole.entities.ExtensionAccount.update(account.id, update);
     }
 
-    return Response.json({ email: account.email, created: account.created_date, whitelist, blacklist });
+    return Response.json({
+      email: account.email,
+      created: account.created_date,
+      whitelist,
+      blacklist,
+      hasPassword: account.has_password !== false,
+      identities: account.linked_identities || []
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

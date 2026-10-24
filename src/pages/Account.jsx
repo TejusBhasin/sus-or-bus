@@ -10,12 +10,14 @@ import { loginAccount } from '@/functions/loginAccount';
 import { accountLists } from '@/functions/accountLists';
 import { recoveryCode as recoveryCodeFn } from '@/functions/recoveryCode';
 import { platformSignIn } from '@/functions/platformSignIn';
+import { linkProvider } from '@/functions/linkProvider';
 import { base44 } from '@/api/base44Client';
 import GoogleIcon from '@/components/GoogleIcon';
 import { MicrosoftIcon, AppleIcon } from '@/components/ProviderIcons';
 import AccountListEditor from '@/components/susbus/AccountListEditor';
 import SetPasswordPrompt from '@/components/susbus/SetPasswordPrompt';
 import RecoveryCodeNotice from '@/components/susbus/RecoveryCodeNotice';
+import SignInMethods from '@/components/susbus/SignInMethods';
 
 const STORAGE_KEY = 'sb_account';
 
@@ -52,12 +54,19 @@ export default function Account() {
   const [recoveryCodeValue, setRecoveryCodeValue] = useState('');
   const [code, setCode] = useState('');
   const [providerBusy, setProviderBusy] = useState(false);
+  const [identities, setIdentities] = useState([]);
+  const [hasPassword, setHasPassword] = useState(true);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState('');
 
   const signOut = () => {
     const wasProvider = session?.via === 'provider';
     localStorage.removeItem(STORAGE_KEY);
     setSession(null);
     setLists({ whitelist: [], blacklist: [] });
+    setIdentities([]);
+    setHasPassword(true);
+    setLinkError('');
     // Provider sessions outlive this page — end them too, or the account
     // would silently sign itself back in on the next visit.
     if (wasProvider) base44.auth.logout(window.location.pathname).catch(() => {});
@@ -65,6 +74,13 @@ export default function Account() {
 
   const handleProvider = (provider) => {
     base44.auth.loginWithProvider(provider, '/account');
+  };
+
+  // Signed in: start connecting another provider. The ?provider= marker tells
+  // the effect above that the return trip should link, not sign in.
+  const connectProvider = (provider) => {
+    setLinkError('');
+    base44.auth.loginWithProvider(provider, '/account?provider=' + provider);
   };
 
   useEffect(() => {
@@ -76,6 +92,8 @@ export default function Account() {
           return;
         }
         setLists({ whitelist: res.data.whitelist || [], blacklist: res.data.blacklist || [] });
+        setIdentities(res.data.identities || []);
+        setHasPassword(res.data.hasPassword !== false);
       })
       .catch(() => {});
   }, [session]); // eslint-disable-line
@@ -88,8 +106,23 @@ export default function Account() {
     const provider = urlParams.get('provider');
     if (provider) window.history.replaceState({}, '', window.location.pathname);
     const saved = getSavedAccount();
-    if (['google', 'microsoft', 'apple'].includes(provider) && !saved) {
+    const isProvider = ['google', 'microsoft', 'apple'].includes(provider);
+    if (isProvider && !saved) {
       base44.auth.loginWithProvider(provider, '/account');
+      return;
+    }
+    if (isProvider && saved) {
+      // Back from connecting another provider to the signed-in account: the
+      // fresh platform session identifies the email to link to it.
+      setLinkBusy(true);
+      linkProvider({ token: saved.token, provider })
+        .then((res) => {
+          const d = res.data || {};
+          if (d.error) setLinkError(d.error);
+          else setIdentities(d.identities || []);
+        })
+        .catch(() => setLinkError('Could not connect that provider — try again.'))
+        .finally(() => setLinkBusy(false));
       return;
     }
     if (saved) return;
@@ -107,6 +140,8 @@ export default function Account() {
             const linked = { token: d.token, email: d.email, mustSetPassword: !!d.mustSetPassword, via: 'provider' };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(linked));
             setLists({ whitelist: d.whitelist || [], blacklist: d.blacklist || [] });
+            setIdentities(d.identities || []);
+            setHasPassword(d.hasPassword !== false);
             setSession(linked);
             setRecoveryCodeValue(d.recoveryCode || '');
           }
@@ -443,6 +478,18 @@ export default function Account() {
                 onAdd={(v) => addToList('blacklist', v)}
                 onRemove={(o) => removeFromList('blacklist', o)}
                 saving={saving}
+              />
+            </div>
+
+            <div className="mt-6">
+              <SignInMethods
+                token={session.token}
+                hasPassword={hasPassword}
+                identities={identities}
+                busy={linkBusy}
+                error={linkError}
+                onConnect={connectProvider}
+                onPasswordSet={() => setHasPassword(true)}
               />
             </div>
           </>

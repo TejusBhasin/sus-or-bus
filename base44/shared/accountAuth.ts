@@ -32,6 +32,15 @@ export async function findAccountByToken(base44, token) {
   return accounts.length > 0 ? accounts[0] : null;
 }
 
+// Finds the account that owns an email — as its primary address or as any
+// provider identity previously connected to it — so signing in with any
+// linked provider reaches the same account.
+export async function findAccountByIdentity(base44, email) {
+  const linked = await base44.asServiceRole.entities.ExtensionAccount.filter({ linked_emails: email });
+  if (linked.length > 0) return linked[0];
+  return findAccountByEmail(base44, email);
+}
+
 // Site lists are http(s) origins, deduplicated, capped at 500 entries.
 export function sanitizeList(value, fallback) {
   if (!Array.isArray(value)) return fallback;

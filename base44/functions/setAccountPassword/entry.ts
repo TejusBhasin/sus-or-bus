@@ -24,7 +24,8 @@ export default async function(req) {
     const salt = makeSalt();
     await base44.asServiceRole.entities.ExtensionAccount.update(account.id, {
       password_salt: salt,
-      password_hash: await hashPassword(newPassword, salt)
+      password_hash: await hashPassword(newPassword, salt),
+      has_password: true
     });
 
     return Response.json({ ok: true });

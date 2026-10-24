@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sus or Bus — website safety check",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Before you open a website see its SUS or BUS rating and decide whether to continue",
   "permissions": ["storage", "contextMenus", "notifications"],
   "host_permissions": ["http://*/*", "https://*/*"],

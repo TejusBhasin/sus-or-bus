@@ -13,8 +13,7 @@ const LOGIN_ENDPOINT = APP_ORIGIN + '/functions/loginAccount';
 const SETPASS_ENDPOINT = APP_ORIGIN + '/functions/setAccountPassword';
 const RECOVERY_ENDPOINT = APP_ORIGIN + '/functions/recoveryCode';
 const LISTS_ENDPOINT = APP_ORIGIN + '/functions/accountLists';
-const FRESH_MS = 7 * 24 * 60 * 60 * 1000; // re-scan a site after 7 days
-const MAX_ENTRIES = 500;
+const CONFIG_ENDPOINT = APP_ORIGIN + '/functions/extensionConfig';
 const ALLOW_MS = 30 * 1000; // a "continue" is honored for 30s so the next page passes the gate
 
 const inflight = new Map(); // origin -> Promise<entry>
@@ -42,7 +41,7 @@ function isGoogleSearch(url) {
 
 // Well-known, reputable domains that skip scanning entirely — 0 credits and
 // no popups. Most browsing happens on sites like these.
-const TRUSTED_DOMAINS = new Set([
+const DEFAULT_TRUSTED_DOMAINS = [
   'google.com', 'youtube.com', 'gmail.com', 'googleapis.com', 'gstatic.com',
   'facebook.com', 'instagram.com', 'whatsapp.com', 'messenger.com',
   'wikipedia.org', 'wikimedia.org', 'reddit.com', 'x.com', 'twitter.com',
@@ -60,14 +59,70 @@ const TRUSTED_DOMAINS = new Set([
   'medium.com', 'quora.com', 'yelp.com', 'tripadvisor.com', 'booking.com',
   'airbnb.com', 'expedia.com', 'mapquest.com', 'roblox.com', 'steampowered.com',
   'discord.com', 'twitch.tv', 'soundcloud.com', 'imdb.com', 'dictionary.com'
-]);
+];
+
+// Live configuration, fetched from the site as DATA (never code — that keeps
+// the published extension compliant with the Chrome Web Store's remote-code
+// ban). The owner edits it at susorbus.com/admin; the extension picks it up
+// within a day and falls back to these baked-in defaults while offline.
+const CONFIG_TTL_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_CONFIG = {
+  cacheDays: 7, // re-scan a site after this many days
+  maxEntries: 500, // cached sites kept per device
+  trustedDomains: DEFAULT_TRUSTED_DOMAINS, // well-known safe domains, never scanned
+  announcement: '', // optional note shown at the top of the popup
+  version: '' // config age; a new version re-shows the announcement
+};
+let configMemo = null;
+
+async function getConfig() {
+  if (configMemo) return configMemo;
+  const s = await chrome.storage.local.get('sb_config');
+  const cfg = { ...DEFAULT_CONFIG, ...(s.sb_config || {}) };
+  if (!Array.isArray(cfg.trustedDomains) || cfg.trustedDomains.length === 0) {
+    cfg.trustedDomains = DEFAULT_TRUSTED_DOMAINS;
+  }
+  configMemo = cfg;
+  return cfg;
+}
+
+async function refreshConfig() {
+  try {
+    const s = await chrome.storage.local.get('sb_config_at');
+    if (s.sb_config_at && Date.now() - s.sb_config_at < CONFIG_TTL_MS) return;
+    const resp = await fetch(CONFIG_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    const data = await resp.json().catch(() => null);
+    if (!resp.ok || !data || !data.config) return;
+    const c = data.config;
+    const cfg = {
+      cacheDays: Math.min(90, Math.max(1, Math.round(Number(c.cache_days)) || 7)),
+      maxEntries: Math.min(5000, Math.max(50, Math.round(Number(c.max_cache_entries)) || 500)),
+      trustedDomains: (Array.isArray(c.trusted_domains) ? c.trusted_domains : [])
+        .map((d) => String(d || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, ''))
+        .filter((d) => d.length > 0 && d.length <= 100)
+        .slice(0, 2000),
+      announcement: String(c.announcement || '').slice(0, 500),
+      version: String(data.version || '')
+    };
+    await chrome.storage.local.set({ sb_config: cfg, sb_config_at: Date.now() });
+    configMemo = cfg;
+  } catch {
+    // offline or unreachable — the stored config or defaults keep working
+  }
+}
+refreshConfig(); // checked on every service-worker start; fetches at most daily
 
 // True when the URL's host is a trusted domain (or a subdomain of one).
-function isTrusted(url) {
+async function isTrusted(url) {
   try {
     const h = new URL(url).hostname.replace(/^www\./, '');
-    if (TRUSTED_DOMAINS.has(h)) return true;
-    for (const d of TRUSTED_DOMAINS) {
+    const domains = (await getConfig()).trustedDomains;
+    if (domains.includes(h)) return true;
+    for (const d of domains) {
       if (h.endsWith('.' + d)) return true;
     }
     return false;
@@ -194,10 +249,11 @@ async function readCache() {
 }
 
 async function writeCache(cache) {
+  const maxEntries = (await getConfig()).maxEntries;
   const entries = Object.values(cache);
-  if (entries.length > MAX_ENTRIES) {
+  if (entries.length > maxEntries) {
     entries.sort((a, b) => (a.scannedAt || 0) - (b.scannedAt || 0));
-    for (const e of entries.slice(0, entries.length - MAX_ENTRIES)) delete cache[e.origin];
+    for (const e of entries.slice(0, entries.length - maxEntries)) delete cache[e.origin];
   }
   await chrome.storage.local.set({ sb_cache: cache });
 }
@@ -268,13 +324,14 @@ async function handleCheck(url, sender) {
   if (!origin) return { status: 'pass' }; // not a checkable website — let it through
   if (await isPaused()) return { status: 'pass' }; // paused until a chosen time — let everything through
   if (isGoogleSearch(url)) return { status: 'pass' }; // Google Search pages are never checked
-  if (isTrusted(url)) return { status: 'pass' }; // well-known safe domain — no scan needed
+  if (await isTrusted(url)) return { status: 'pass' }; // well-known safe domain — no scan needed
   const key = await keyFor(url);
   if (await isWhitelisted(key)) return { status: 'pass' }; // user whitelisted this site
 
+  const freshMs = (await getConfig()).cacheDays * 24 * 60 * 60 * 1000;
   const cache = await readCache();
   const hit = cache[key];
-  if (hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS) {
+  if (hit && Date.now() - (hit.scannedAt || 0) < freshMs) {
     return { status: 'hit', data: hit };
   }
 
@@ -306,15 +363,16 @@ async function handleGate(msg, sender) {
     return { status: 'pass' };
   }
   if (isGoogleSearch(msg.url)) return { status: 'pass' }; // Google Search pages are never checked
-  if (isTrusted(msg.url)) return { status: 'pass' }; // well-known safe domain — no scan needed
+  if (await isTrusted(msg.url)) return { status: 'pass' }; // well-known safe domain — no scan needed
   if (msg.refOrigin && msg.refOrigin === origin) return { status: 'pass' }; // same-site chain
   if (consumeAllow(origin)) return { status: 'pass' }; // already approved this hop
   const key = await keyFor(msg.url);
   if (await isWhitelisted(key)) return { status: 'pass' }; // user whitelisted this site
 
+  const freshMs = (await getConfig()).cacheDays * 24 * 60 * 60 * 1000;
   const cache = await readCache();
   const hit = cache[key];
-  if (hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS) {
+  if (hit && Date.now() - (hit.scannedAt || 0) < freshMs) {
     return { status: 'takeover', data: hit };
   }
 
@@ -534,9 +592,10 @@ async function updateBadge(tabId, url) {
     let text = '';
     let color = '#64748b';
     if (key) {
+      const freshMs = (await getConfig()).cacheDays * 24 * 60 * 60 * 1000;
       const cache = await readCache();
       const hit = cache[key];
-      if (hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS) {
+      if (hit && Date.now() - (hit.scannedAt || 0) < freshMs) {
         if (hit.verdict === 'bus') {
           text = '\u2713';
           color = '#34d399';
@@ -596,9 +655,10 @@ async function scanAndReport(url) {
   const origin = originOf(url);
   if (!origin) return;
   const key = await keyFor(url);
+  const freshMs = (await getConfig()).cacheDays * 24 * 60 * 60 * 1000;
   const cache = await readCache();
   const hit = cache[key];
-  let entry = hit && Date.now() - (hit.scannedAt || 0) < FRESH_MS ? hit : null;
+  let entry = hit && Date.now() - (hit.scannedAt || 0) < freshMs ? hit : null;
   if (!entry) {
     try {
       entry = await getScan(origin);

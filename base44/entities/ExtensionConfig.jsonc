@@ -1,0 +1,50 @@
+{
+  "name": "ExtensionConfig",
+  "type": "object",
+  "properties": {
+    "trusted_domains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Well-known safe domains the extension never scans. Empty means the extension's built-in list."
+    },
+    "cache_days": {
+      "type": "number",
+      "description": "Days a cached site scan stays fresh in the extension",
+      "default": 7
+    },
+    "max_cache_entries": {
+      "type": "number",
+      "description": "Cached sites kept per device",
+      "default": 500
+    },
+    "announcement": {
+      "type": "string",
+      "description": "Short note shown at the top of the extension popup until the user dismisses it"
+    }
+  },
+  "required": [],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
