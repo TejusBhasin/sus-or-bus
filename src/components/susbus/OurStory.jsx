@@ -13,7 +13,7 @@ export default function OurStory() {
       <p className="text-sm text-foreground/90 leading-relaxed">
         I&apos;m Tejus Bhasin, and I built Sus or Bus after my school was hacked over the summer. A teacher clicked a
         malicious link, which gave a bad actor access to that teacher&apos;s inbox and email. From the teacher&apos;s
-        account, the hacker emailed every student in the school, demanding money for a product that didn&apos;s exist. Students lost real money. Sus or Bus exists to
+        account, the hacker emailed every student in the school, demanding money for a product that didn&apos;s exist. Students lost real money, and I felt deeply troubled by this. Sus or Bus exists to
         stop scams like this before they start, by checking the links you click, the emails you receive, and the sites
         you browse.
       </p>
