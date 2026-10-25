@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { makeSalt, makeToken, hashPassword, makeRecoveryCode, findAccountByIdentity, sanitizeList } from '../../shared/accountAuth.ts';
+import { makeToken, hashPassword, issueRecoveryCode, findAccountByIdentity, sanitizeList } from '../../shared/accountAuth.ts';
 
 // Signs the caller into their Sus or Bus account using their platform
 // provider session (Google / Microsoft / Apple). The account matches on the
@@ -53,16 +53,7 @@ export default async function(req) {
       linked_identities: [{ provider, email }]
     });
 
-    const recoveryCode = makeRecoveryCode();
-    const recoverySalt = makeSalt();
-    await base44.asServiceRole.entities.RecoveryCode.create({
-      email,
-      code_salt: recoverySalt,
-      code_hash: await hashPassword(recoveryCode, recoverySalt),
-      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      used: false,
-      attempts: 0
-    });
+    const recoveryCode = await issueRecoveryCode(base44, email);
 
     return Response.json({
       token,

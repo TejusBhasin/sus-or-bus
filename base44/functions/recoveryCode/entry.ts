@@ -1,16 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { isEmail, makeSalt, hashPassword, makeRecoveryCode, findAccountByEmail } from '../../shared/accountAuth.ts';
+import { isEmail, makeSalt, hashPassword, issueRecoveryCode, findAccountByEmail } from '../../shared/accountAuth.ts';
 
 // Recovery codes for Sus or Bus accounts. A code is a one-time secret that
-// lets an account owner set a new password without the old one. Only a
-// salted hash of each code is stored — never the code itself.
+// lets an account owner set a new password without the old one. Codes are
+// stored unencrypted so the account owner can always be given a code
+// directly.
 //   - 'issue'  : admin-only. Generates a fresh single-use code for an
-//                account and returns it exactly once.
+//                account and returns it.
 //   - 'redeem' : guarded by the high-entropy code itself. Verifies the code,
-//                burns it, sets the new password, and returns a signed-in
-//                session. After 5 wrong tries the newest code is burned.
+//                burns it, sets the new password, issues the next code, and
+//                returns a signed-in session. After 5 wrong tries the newest
+//                code is burned.
 
-const CODE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
 export default async function(req) {
@@ -29,17 +30,8 @@ export default async function(req) {
       const account = await findAccountByEmail(base44, email);
       if (!account) return Response.json({ error: 'No account found with this email' }, { status: 404 });
 
-      const code = makeRecoveryCode();
-      const salt = makeSalt();
-      await base44.asServiceRole.entities.RecoveryCode.create({
-        email,
-        code_salt: salt,
-        code_hash: await hashPassword(code, salt),
-        expires: new Date(Date.now() + CODE_TTL_MS).toISOString(),
-        used: false,
-        attempts: 0
-      });
-      return Response.json({ ok: true, email, code, expiresInDays: 30 });
+      const code = await issueRecoveryCode(base44, email);
+      return Response.json({ ok: true, email, code });
     }
 
     if (action === 'redeem') {
@@ -65,7 +57,7 @@ export default async function(req) {
 
       let matched = null;
       for (const rec of active) {
-        if ((await hashPassword(code, rec.code_salt)) === rec.code_hash) {
+        if (String(rec.code || '').toUpperCase() === code) {
           matched = rec;
           break;
         }
@@ -82,8 +74,10 @@ export default async function(req) {
         return Response.json({ error: 'That recovery code is not valid' }, { status: 401 });
       }
 
-      // Single use: burn the code, then rotate the password.
+      // Single use: burn the code, rotate the password, and issue the next
+      // code so the account always has a live one.
       await base44.asServiceRole.entities.RecoveryCode.update(matched.id, { used: true });
+      const nextCode = await issueRecoveryCode(base44, email);
       const salt = makeSalt();
       await base44.asServiceRole.entities.ExtensionAccount.update(account.id, {
         password_salt: salt,
@@ -102,7 +96,8 @@ export default async function(req) {
         token: account.token,
         email: account.email,
         whitelist: account.whitelist || [],
-        blacklist: account.blacklist || []
+        blacklist: account.blacklist || [],
+        recoveryCode: nextCode
       });
     }
 

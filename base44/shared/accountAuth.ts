@@ -53,8 +53,8 @@ export function sanitizeList(value, fallback) {
   return out;
 }
 
-// Recovery codes: high-entropy, single-use, shown to the user exactly once.
-// Only the salt and hash are ever stored — never the code itself.
+// Recovery codes: high-entropy, single-use. Stored unencrypted so the
+// account owner can always be given their code directly.
 const CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
 export function makeRecoveryCode() {
@@ -66,4 +66,19 @@ export function makeRecoveryCode() {
     groups.push(s);
   }
   return groups.join('-');
+}
+
+// Creates a fresh single-use recovery code record for an account and returns
+// the code. Every account keeps exactly one live code: a new one is issued at
+// account creation and again each time the previous one is redeemed.
+export async function issueRecoveryCode(base44, email) {
+  const code = makeRecoveryCode();
+  await base44.asServiceRole.entities.RecoveryCode.create({
+    email,
+    code,
+    expires: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    used: false,
+    attempts: 0
+  });
+  return code;
 }

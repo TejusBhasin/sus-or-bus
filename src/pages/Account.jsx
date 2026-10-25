@@ -207,6 +207,9 @@ export default function Account() {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
           setLists({ whitelist: res.data.whitelist || [], blacklist: res.data.blacklist || [] });
           setSession(saved);
+          // A fresh code replaces the one just used — show it right away so
+          // the account always has a live recovery code saved.
+          setRecoveryCodeValue(res.data.recoveryCode || '');
           setEmail('');
           setPassword('');
           setCode('');

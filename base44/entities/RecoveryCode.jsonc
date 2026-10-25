@@ -6,12 +6,9 @@
       "type": "string",
       "description": "Email of the account this single-use recovery code unlocks"
     },
-    "code_salt": {
-      "type": "string"
-    },
-    "code_hash": {
+    "code": {
       "type": "string",
-      "description": "Salted hash of the recovery code. The code itself is never stored."
+      "description": "The recovery code itself, stored unencrypted so the account owner can be given it directly"
     },
     "expires": {
       "type": "string",
@@ -34,8 +31,7 @@
   },
   "required": [
     "email",
-    "code_salt",
-    "code_hash",
+    "code",
     "expires"
   ],
   "rls": {
