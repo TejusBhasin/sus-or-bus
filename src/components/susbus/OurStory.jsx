@@ -5,7 +5,7 @@ const REPO_URL = 'https://github.com/TejusBhasin/sus-or-bus';
 
 export default function OurStory() {
   return (
-    <section className="mt-8 rounded-xl border border-border bg-card p-6">
+    <section className="mt-8 rounded-2xl border border-border bg-card/60 backdrop-blur p-6">
       <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-[0.25em] text-muted-foreground mb-4">
         <HeartHandshake className="w-4 h-4" />
         Our Story

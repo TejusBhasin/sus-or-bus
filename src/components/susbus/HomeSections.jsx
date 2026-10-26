@@ -38,14 +38,12 @@ const verdicts = [
   {
     icon: CheckCircle2,
     tone: 'text-emerald-500 dark:text-emerald-400',
-    box: 'border-emerald-500/25 bg-emerald-500/5',
     title: 'BUS — looks legit',
     text: 'No red flags found. Safe to use — but keep your wits about you when logging in or paying anywhere.'
   },
   {
     icon: AlertTriangle,
     tone: 'text-red-500 dark:text-red-400',
-    box: 'border-red-500/25 bg-red-500/5',
     title: 'SUS — proceed with caution',
     text: 'Red flags found. Stop and reconsider — or jump to one of the suggested safer alternatives on the report.'
   }
@@ -81,9 +79,9 @@ export default function HomeSections() {
       <section>
         <SectionLabel icon={ListChecks}>how to use</SectionLabel>
         <h2 className="text-2xl font-black tracking-tight mb-5">From sketchy link to verdict in seconds</h2>
-        <ol className="border-b border-border">
+        <ol className="grid gap-3">
           {steps.map((s, i) => (
-            <li key={s.title} className="border-t border-border py-5">
+            <li key={s.title} className="rounded-xl border border-border bg-card/60 p-5">
               <div className="flex items-start gap-4">
                 <span className="font-mono text-xs text-muted-foreground pt-0.5">{String(i + 1).padStart(2, '0')}</span>
                 <div>
@@ -104,7 +102,7 @@ export default function HomeSections() {
           {verdicts.map((v) => {
             const Icon = v.icon;
             return (
-              <div key={v.title} className={`rounded-lg border p-5 ${v.box}`}>
+              <div key={v.title} className="rounded-xl border border-border bg-card/60 p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Icon className={`w-4 h-4 ${v.tone}`} />
                   <h3 className="font-semibold">{v.title}</h3>
@@ -113,7 +111,7 @@ export default function HomeSections() {
               </div>
             );
           })}
-          <div className="rounded-lg border border-border bg-card p-5 sm:col-span-2">
+          <div className="rounded-xl border border-border bg-card/60 p-5 sm:col-span-2">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
               <h3 className="font-semibold">The score and the findings</h3>
@@ -140,7 +138,7 @@ export default function HomeSections() {
       </section>
 
       {/* CTA */}
-      <section className="rounded-xl border border-border bg-card p-6 text-center">
+      <section className="rounded-2xl border border-border bg-card/60 backdrop-blur p-6 text-center">
         <h2 className="text-xl font-black tracking-tight mb-2">Take Sus or Bus with you</h2>
         <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto mb-5">
           Check sites before you even open them — in your browser or right on your phone.
@@ -148,7 +146,7 @@ export default function HomeSections() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
             to="/extension"
-            className="inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-lg bg-primary text-primary-foreground font-semibold text-base hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:bg-primary/90 transition-colors"
           >
             <Chrome className="w-4 h-4" />
             Get the extension
@@ -157,7 +155,7 @@ export default function HomeSections() {
             href="https://apps.apple.com/nz/app/sus-or-bus/id6808757038"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-lg border border-border bg-secondary/60 text-foreground font-semibold text-base hover:bg-secondary transition-colors"
+            className="inline-flex items-center justify-center gap-2 min-h-12 px-6 rounded-xl border border-border bg-secondary/60 text-foreground font-semibold text-base hover:bg-secondary transition-colors"
           >
             <Smartphone className="w-4 h-4" />
             Download on the App Store
