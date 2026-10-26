@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { setPendingReport, getAnalyzeError, clearAnalyzeError } from '@/lib/pendingReport';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Globe, Code2, FileText, FileUp, Mail, ShieldAlert, Sparkles, Settings, UserPlus, Scale } from 'lucide-react';
+import { Loader2, Globe, Code2, FileText, FileUp, Mail, ShieldAlert, ScanSearch, Settings, UserPlus, Scale } from 'lucide-react';
 import LanguageSwitcher from '@/components/susbus/LanguageSwitcher';
 import ThemeToggle from '@/components/susbus/ThemeToggle';
 import PullToRefresh from '@/components/susbus/PullToRefresh';
@@ -101,11 +101,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground relative flex flex-col pt-safe">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-indigo-600/10 blur-[120px]" />
-        <div className="absolute top-1/3 -right-40 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-[120px]" />
-      </div>
-
       <ScrollDownButton />
 
       <PullToRefresh onRefresh={() => { setContent(''); setError(''); setInputType('url'); setDocFile(null); }}>
@@ -115,7 +110,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Link
               to="/account"
-              className="inline-flex items-center gap-1.5 min-h-11 px-3 rounded-lg border border-border bg-card/60 backdrop-blur text-xs text-foreground hover:bg-secondary/70 transition-colors"
+              className="inline-flex items-center gap-1.5 min-h-11 px-3 rounded-md border border-border bg-card/60 backdrop-blur text-xs text-foreground hover:bg-secondary/70 transition-colors"
             >
               <UserPlus className="w-3.5 h-3.5" />
               <span className="font-mono">{localStorage.getItem('sb_account') ? 'Account' : 'Create an account'}</span>
@@ -123,7 +118,7 @@ export default function Home() {
             <Link
               to="/settings"
               aria-label="Settings"
-              className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-lg border border-border bg-card/60 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors"
+              className="inline-flex items-center justify-center min-h-11 min-w-11 rounded-md border border-border bg-card/60 backdrop-blur text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors"
             >
               <Settings className="w-4 h-4" />
             </Link>
@@ -138,7 +133,7 @@ export default function Home() {
           </div>
           <h1 className="text-5xl sm:text-6xl font-black tracking-tighter leading-[0.95]">
             <span className="text-red-500 dark:text-red-400">Sus</span>
-            <span className="text-muted-foreground/60 mx-2">or</span>
+            <span className="italic font-normal text-muted-foreground/70 mx-2">or</span>
             <span className="text-emerald-500 dark:text-emerald-400">Bus</span>
           </h1>
           <p className="mt-5 text-muted-foreground text-base sm:text-lg max-w-md mx-auto leading-relaxed">
@@ -146,7 +141,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card/60 backdrop-blur p-5 shadow-2xl">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <div className="flex flex-wrap gap-1.5 mb-4">
             {inputTypes.map((type) => {
               const Icon = type.icon;
@@ -155,7 +150,7 @@ export default function Home() {
                 <button
                   key={type.id}
                   onClick={() => setInputType(type.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg min-h-11 px-3 text-xs font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-md min-h-11 px-3 text-xs font-medium transition-colors ${
                     active
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-secondary/60 text-muted-foreground hover:text-foreground hover:bg-secondary'
@@ -196,7 +191,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 mr-2" />
+                <ScanSearch className="w-4 h-4 mr-2" />
                 {t('run_check')}
               </>
             )}
