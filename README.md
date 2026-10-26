@@ -40,6 +40,8 @@ The extension (Chrome + Safari, in `extension/`) brings the same checks to your 
 - opening a SUS site directly (typed address, bookmark, pinned tab) triggers a full-screen report
 - "Don't ask again" whitelisting for sites you trust
 - an optional account that syncs your whitelist/blacklist between the extension and the website
+- It works on the same backend, with the extension and website communicating with eachother
+
 
 ## How a scan works
 
