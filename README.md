@@ -2,7 +2,7 @@
 
 **Is it bussin, or is it sus?**
 
-Sus or Bus checks links, emails, code, documents, and plain text for scams, phishing, and other sketchy behavior — then gives you one honest verdict: **BUS** (safe, legit) or **SUS** (suspicious, unsafe).
+Sus or Bus checks links, emails, code, documents, attachments, and plain text for scams, phishing, and other sketchy behavior — then gives you one honest verdict: **BUS** (safe, legit) or **SUS** (suspicious, unsafe).
 
 Try it live at **https://susorbus.com**
 
